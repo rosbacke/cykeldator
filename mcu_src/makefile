@@ -6,14 +6,14 @@ CXXFLAGS += -mthumb -mcpu=cortex-m3
 
 SPEC:=-specs=nosys.specs
 
-FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC)
+FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions
 
 
 STFW_D=../thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
 
 
-SRC=system_stm32f10x.c main.cpp startup_stm32f10x_md.s 
+SRC=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp
 # SRC += $(STFW_D)/STM32F10x_StdPeriph_Driver/src/stm32f10x_rcc.c
 
 #usart.c timer.c drivers.c

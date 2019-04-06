@@ -1,0 +1,177 @@
+#include "timer.h"
+
+#include "stm32f10x.h"
+#include "usart.h"
+
+#include <stdint.h>
+
+
+/**
+ * Timer2 is set up to count crystal clock pulses (8 mHz) and then use interrupt
+ * to extend that count. The low 16 bits are given by the hardware counter and
+ * upper 16 bits by interrupts.
+ *
+ * In addition time stamps are taken for each positive and negative pulse coming
+ * in from the odometer sensor. The output are pair-wise 32 bit time stamps of
+ * pulse begin/pulse end.
+ *
+ * Input Pin: PA2
+ * Timer TIM2.
+ * Capture register: CAP2.
+ * Capture register: CAP3.
+ */
+
+volatile uint32_t systickCnt;
+
+volatile uint16_t cntMsb;
+volatile uint32_t cntMsb2;
+
+volatile uint32_t posEdgeTS;
+volatile uint32_t negEdgeTS;
+volatile uint32_t count;
+
+static TimerCB s_timerCB = nullptr;
+
+void setCallback(TimerCB cb)
+{
+	s_timerCB = cb;
+}
+
+// Input PA2, Tim2, Channel 3.
+
+
+void delay(int ms)
+{
+	uint32_t base = systickCnt;
+	while((systickCnt - base) < ms)
+		;
+}
+
+uint32_t timer_counterU32()
+{
+	uint16_t cnt0_15;
+	uint16_t cnt16_31;
+
+	do {
+		cnt0_15 = TIM2->CNT;
+		cnt16_31 = cntMsb;
+	} while( ((int16_t)(TIM2->CNT - cnt0_15)) < 0);
+
+	return cnt16_31 << 16u | cnt0_15;
+}
+
+uint32_t timer_lastNegTP()
+{
+	return negEdgeTS;
+}
+
+uint32_t timer_lastPosTP()
+{
+	return posEdgeTS;
+}
+
+uint16_t timer_sysTickDelta()
+{
+	return cntMsb;
+}
+
+void setupTimer()
+{
+	SysTick_Config(72000);
+
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+
+	GPIOA->CRH &= ~(0xfu << (0 * 4));
+	GPIOA->CRH |= (2u << (0 * 4));
+
+	// Enable counter, rest is default.
+	TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
+
+	/* set Priority for Cortex-M3 System Interrupts */
+	NVIC_SetPriority (TIM2_IRQn, (1<<__NVIC_PRIO_BITS) - 1);
+	NVIC_EnableIRQ(TIM2_IRQn);
+
+	// Set up CC3/CC4 as input capture on IT3.
+	TIM2->CCMR2 |= TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1;
+
+	// Enable capture on CC3 / CC4. CC4 neg flank.
+	TIM2->CCER |= TIM_CCER_CC3E | TIM_CCER_CC4E | TIM_CCER_CC4P;
+
+	TIM2->DIER |= TIM_DIER_UIE | TIM_DIER_CC3IE | TIM_DIER_CC4IE;
+}
+
+/* Case 1:
+ * - CC taken (high value) start irq processing.
+ * - Timer overflow and UIF set. (cnt low, cntUpdate = true)
+ * -> Need cntMsb - 1.
+ *
+ * Case 2:
+ * - CC taken (high value) start irq processing.
+ * - Timer overflow between SR & CNT. (cnt low, cntUpdate = false)
+ * -> Need cntMsb.
+ *
+ * Case 3:
+ * - CC taken (high value) start irq processing.
+ * - Timer overflow after SR & CNT. (cnt high, cntUpdate = false)
+ * -> Need cntMsb.
+ *
+ * Case 4:
+ * - Timer overflow.  (cnt low, cntUpdate = true)
+ * - CC taken (low value)
+ * - SR read -> cnt low.
+ * -> Need cntMsb.
+ *
+ * Case 5:
+ * - Timer overflow. (cnt low, cntUpdate = true)
+ * - SR read -> Not seeing CCR.
+ * - CC taken (low value)
+ * -> No update of CCR.
+ */
+void TIM2_IRQHandler(void)
+{
+	uint16_t srMask = 0;
+	uint16_t sr = TIM2->SR;
+	uint16_t cnt = TIM2->CNT;
+	bool send = false;
+	const bool cntUpdate = sr & TIM_SR_UIF;
+	if (cntUpdate)
+	{
+		cntMsb++;
+		if (cntMsb == 0)
+			cntMsb2++;
+
+		srMask |= TIM_SR_UIF;
+	}
+	if (sr & TIM_SR_CC3IF)
+	{
+		uint16_t capture = TIM2->CCR3;
+		uint16_t msb = (capture > 0xc000 && cnt < 0x3fff && cntUpdate) ? cntMsb - 1 : cntMsb;
+		posEdgeTS = TIM2->CCR3 | (msb << 16u);
+		send = true;
+		srMask |= TIM_SR_CC3IF;
+	}
+	if (sr & TIM_SR_CC4IF)
+	{
+		uint16_t capture = TIM2->CCR4;
+		uint16_t msb = (capture > 0xc000 && cnt < 0x3fff && cntUpdate) ? cntMsb - 1 : cntMsb;
+		negEdgeTS = TIM2->CCR4 | (msb << 16u);
+		srMask |= TIM_SR_CC4IF;
+	}
+	TIM2->SR &= ~(uint32_t)srMask;
+
+	if (send && s_timerCB)
+		s_timerCB(TickPoint(count++, negEdgeTS, posEdgeTS));
+}
+
+extern "C" void SysTick_Handler(void)
+{
+	static bool sw;
+	sw = !sw;
+
+	if (sw)
+		GPIOA->ODR &= ~0x100u;
+	else
+		GPIOA->ODR |= 0x100u;
+	systickCnt++;
+}

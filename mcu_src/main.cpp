@@ -1,7 +1,5 @@
 #include <stm32f10x.h>
-//#include <stm32f10x_rcc.h>
-
-static volatile uint32_t s_tick = 0;
+#include "timer.h"
 
 #define DEF_HANDLER(x) \
 extern "C" void x(void) \
@@ -23,12 +21,6 @@ extern "C" void HardFault_Handler(void)
 }
 
 
-extern "C" void SysTick_Handler(void)
-{
-	s_tick++;
-}
-
-
 void setLed(bool on)
 {
 	if (on)
@@ -40,7 +32,6 @@ void setLed(bool on)
 void setup()
 {
 	SysTick_Config(72000);
-	__enable_irq();
 	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 	GPIOC->CRH |= GPIO_CRH_MODE13_1;
 	GPIOC->CRH |= 0;
@@ -50,16 +41,15 @@ void setup()
 int main()
 {
 	setup();
+	__enable_irq();
 	setLed(false);
 	while(1)
 	{
-		while(s_tick < 500)
+		delay(300)
 			;
-		s_tick = 0;
 		setLed(true);
-		while(s_tick < 500)
+		delay(200)
 			;
-		s_tick = 0;
 		setLed(false);
 	}
 }

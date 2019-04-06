@@ -8,3 +8,4 @@
 a.out
 main.dis
 main_dump.txt
+mcu_src/openocd.log
