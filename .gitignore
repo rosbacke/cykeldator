@@ -1,0 +1,10 @@
+.cproject
+.project
+.settings
+*.o
+*.bin
+*.elf
+*~
+a.out
+main.dis
+main_dump.txt
