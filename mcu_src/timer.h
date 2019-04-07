@@ -9,20 +9,11 @@
 #define STM32_SRC_TIMER_H_
 
 #include <stdint.h>
+#include "TickPoint.h"
 
-struct TickPoint {
-	TickPoint(uint32_t count, uint32_t fe, uint32_t re) :
-			m_count(count), m_failingEdge(fe), m_raisingEdge(re) {
-	}
+using TimerCB = void (*)(const TickPoint& tp, void* ctx);
 
-	uint32_t m_count;
-	uint32_t m_failingEdge;
-	uint32_t m_raisingEdge;
-};
-
-using TimerCB = void (*)(const TickPoint& tp);
-
-void setCallback(TimerCB cb);
+void setTimerCallback(TimerCB cb, void* ctx);
 
 void setupTimer();
 

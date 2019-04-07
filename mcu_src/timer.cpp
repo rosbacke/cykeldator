@@ -31,10 +31,12 @@ volatile uint32_t negEdgeTS;
 volatile uint32_t count;
 
 static TimerCB s_timerCB = nullptr;
+static void* s_timerCBCtx = nullptr;
 
-void setCallback(TimerCB cb)
+void setTimerCallback(TimerCB cb, void* ctx)
 {
 	s_timerCB = cb;
+	s_timerCBCtx = ctx;
 }
 
 // Input PA2, Tim2, Channel 3.
@@ -75,6 +77,10 @@ uint16_t timer_sysTickDelta()
 	return cntMsb;
 }
 
+/**
+ * Set up PA8 as input to monitor, Timer2 to count up 0-0xffff,
+ * CCR3 to detect positive flank and CCR4 for negative flank.
+ */
 void setupTimer()
 {
 	SysTick_Config(72000);
@@ -117,7 +123,7 @@ void setupTimer()
  * -> Need cntMsb.
  *
  * Case 4:
- * - Timer overflow.  (cnt low, cntUpdate = true)
+ * - Timer overflow, start irq processing.  (cnt low, cntUpdate = true)
  * - CC taken (low value)
  * - SR read -> cnt low.
  * -> Need cntMsb.
@@ -161,7 +167,7 @@ void TIM2_IRQHandler(void)
 	TIM2->SR &= ~(uint32_t)srMask;
 
 	if (send && s_timerCB)
-		s_timerCB(TickPoint(count++, negEdgeTS, posEdgeTS));
+		s_timerCB(TickPoint(count++, negEdgeTS, posEdgeTS), s_timerCBCtx);
 }
 
 extern "C" void SysTick_Handler(void)
