@@ -12,7 +12,7 @@ FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-
 STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
 
-MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp
+MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp
 SRC:=$(MCU_SRC:%=mcu_src/%)
 
 # SRC += $(STFW_D)/STM32F10x_StdPeriph_Driver/src/stm32f10x_rcc.c

@@ -1,5 +1,6 @@
 #include <stm32f10x.h>
 #include "timer.h"
+#include "usart.h"
 
 #define DEF_HANDLER(x) \
 extern "C" void x(void) \
@@ -35,6 +36,7 @@ void setup()
 	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 	GPIOC->CRH |= GPIO_CRH_MODE13_1;
 	GPIOC->CRH |= 0;
+	usart_init();
 }
 
 
@@ -45,6 +47,7 @@ int main()
 	setLed(false);
 	while(1)
 	{
+		usart_blockwrite("Test.");
 		delay(300)
 			;
 		setLed(true);
