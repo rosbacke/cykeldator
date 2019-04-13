@@ -33,49 +33,43 @@ volatile uint32_t count;
 static TimerCB s_timerCB = nullptr;
 static void* s_timerCBCtx = nullptr;
 
-void setTimerCallback(TimerCB cb, void* ctx)
+void setTimerCallback( TimerCB cb, void* ctx )
 {
-	s_timerCB = cb;
-	s_timerCBCtx = ctx;
+    s_timerCB = cb;
+    s_timerCBCtx = ctx;
 }
 
 // Input PA2, Tim2, Channel 3.
 
 
-void delay(int ms)
+void delay( int ms )
 {
-	uint32_t base = systickCnt;
-	while((systickCnt - base) < ms)
-		;
+    uint32_t base = systickCnt;
+    while ( ( systickCnt - base ) < ms )
+        ;
 }
 
 uint32_t timer_counterU32()
 {
-	uint16_t cnt0_15;
-	uint16_t cnt16_31;
+    uint16_t cnt0_15;
+    uint16_t cnt16_31;
 
-	do {
-		cnt0_15 = TIM2->CNT;
-		cnt16_31 = cntMsb;
-	} while( ((int16_t)(TIM2->CNT - cnt0_15)) < 0);
+    do
+    {
+        cnt0_15 = TIM2->CNT;
+        cnt16_31 = cntMsb;
+    } while ( ( ( int16_t )( TIM2->CNT - cnt0_15 ) ) < 0 );
 
-	return cnt16_31 << 16u | cnt0_15;
+    return cnt16_31 << 16u | cnt0_15;
 }
 
-uint32_t timer_lastNegTP()
-{
-	return negEdgeTS;
-}
+uint32_t timer_lastNegTP() { return negEdgeTS; }
 
-uint32_t timer_lastPosTP()
-{
-	return posEdgeTS;
-}
+uint32_t timer_lastPosTP() { return posEdgeTS; }
 
-uint16_t timer_sysTickDelta()
-{
-	return cntMsb;
-}
+uint16_t timer_sysTickDelta() { return cntMsb; }
+
+uint32_t timerSysTick() { return systickCnt; }
 
 /**
  * Set up PA8 as input to monitor, Timer2 to count up 0-0xffff,
@@ -83,28 +77,28 @@ uint16_t timer_sysTickDelta()
  */
 void setupTimer()
 {
-	SysTick_Config(72000);
+    SysTick_Config( 72000 );
 
-	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
 
-	GPIOA->CRH &= ~(0xfu << (0 * 4));
-	GPIOA->CRH |= (2u << (0 * 4));
+    GPIOA->CRH &= ~( 0xfu << ( 0 * 4 ) );
+    GPIOA->CRH |= ( 2u << ( 0 * 4 ) );
 
-	// Enable counter, rest is default.
-	TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
+    // Enable counter, rest is default.
+    TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
 
-	/* set Priority for Cortex-M3 System Interrupts */
-	NVIC_SetPriority (TIM2_IRQn, (1<<__NVIC_PRIO_BITS) - 1);
-	NVIC_EnableIRQ(TIM2_IRQn);
+    /* set Priority for Cortex-M3 System Interrupts */
+    NVIC_SetPriority( TIM2_IRQn, ( 1 << __NVIC_PRIO_BITS ) - 1 );
+    NVIC_EnableIRQ( TIM2_IRQn );
 
-	// Set up CC3/CC4 as input capture on IT3.
-	TIM2->CCMR2 |= TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1;
+    // Set up CC3/CC4 as input capture on IT3.
+    TIM2->CCMR2 |= TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1;
 
-	// Enable capture on CC3 / CC4. CC4 neg flank.
-	TIM2->CCER |= TIM_CCER_CC3E | TIM_CCER_CC4E | TIM_CCER_CC4P;
+    // Enable capture on CC3 / CC4. CC4 neg flank.
+    TIM2->CCER |= TIM_CCER_CC3E | TIM_CCER_CC4E | TIM_CCER_CC4P;
 
-	TIM2->DIER |= TIM_DIER_UIE | TIM_DIER_CC3IE | TIM_DIER_CC4IE;
+    TIM2->DIER |= TIM_DIER_UIE | TIM_DIER_CC3IE | TIM_DIER_CC4IE;
 }
 
 /* Case 1:
@@ -134,44 +128,49 @@ void setupTimer()
  * - CC taken (low value)
  * -> No update of CCR.
  */
-void TIM2_IRQHandler(void)
+void TIM2_IRQHandler( void )
 {
-	uint16_t srMask = 0;
-	uint16_t sr = TIM2->SR;
-	uint16_t cnt = TIM2->CNT;
-	bool send = false;
-	const bool cntUpdate = sr & TIM_SR_UIF;
-	if (cntUpdate)
-	{
-		cntMsb++;
-		if (cntMsb == 0)
-			cntMsb2++;
+    uint16_t srMask = 0;
+    uint16_t sr = TIM2->SR;
+    uint16_t cnt = TIM2->CNT;
+    bool send = false;
+    const bool cntUpdate = sr & TIM_SR_UIF;
+    if ( cntUpdate )
+    {
+        cntMsb++;
+        if ( cntMsb == 0 )
+            cntMsb2++;
 
-		srMask |= TIM_SR_UIF;
-	}
-	if (sr & TIM_SR_CC3IF)
-	{
-		uint16_t capture = TIM2->CCR3;
-		uint16_t msb = (capture > 0xc000 && cnt < 0x3fff && cntUpdate) ? cntMsb - 1 : cntMsb;
-		posEdgeTS = TIM2->CCR3 | (msb << 16u);
-		send = true;
-		srMask |= TIM_SR_CC3IF;
-	}
-	if (sr & TIM_SR_CC4IF)
-	{
-		uint16_t capture = TIM2->CCR4;
-		uint16_t msb = (capture > 0xc000 && cnt < 0x3fff && cntUpdate) ? cntMsb - 1 : cntMsb;
-		negEdgeTS = TIM2->CCR4 | (msb << 16u);
-		srMask |= TIM_SR_CC4IF;
-	}
-	TIM2->SR &= ~(uint32_t)srMask;
+        srMask |= TIM_SR_UIF;
+    }
+    if ( sr & TIM_SR_CC3IF )
+    {
+        uint16_t capture = TIM2->CCR3;
+        uint16_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
+                           ? cntMsb - 1
+                           : cntMsb;
+        posEdgeTS = TIM2->CCR3 | ( msb << 16u );
+        send = true;
+        srMask |= TIM_SR_CC3IF;
+    }
+    if ( sr & TIM_SR_CC4IF )
+    {
+        uint16_t capture = TIM2->CCR4;
+        uint16_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
+                           ? cntMsb - 1
+                           : cntMsb;
+        negEdgeTS = TIM2->CCR4 | ( msb << 16u );
+        srMask |= TIM_SR_CC4IF;
+    }
+    TIM2->SR &= ~( uint32_t )srMask;
 
-	if (send && s_timerCB)
-		s_timerCB(TickPoint(count++, negEdgeTS, posEdgeTS), s_timerCBCtx);
+    if ( send && s_timerCB )
+        s_timerCB( TickPoint( count++, negEdgeTS, posEdgeTS ), s_timerCBCtx );
 }
 
-extern "C" void SysTick_Handler(void)
+extern "C" void SysTick_Handler( void )
 {
+#if 0
 	static bool sw;
 	sw = !sw;
 
@@ -179,5 +178,6 @@ extern "C" void SysTick_Handler(void)
 		GPIOA->ODR &= ~0x100u;
 	else
 		GPIOA->ODR |= 0x100u;
-	systickCnt++;
+#endif
+    systickCnt++;
 }

@@ -15,6 +15,7 @@ struct TickPoint {
 	TickPoint(uint32_t count, uint32_t fe, uint32_t re) :
 			m_count(count), m_failingEdge(fe), m_raisingEdge(re) {
 	}
+	TickPoint& operator=(const TickPoint&) = default;
 
 	uint32_t m_count = 0;
 	uint32_t m_failingEdge = 0;
