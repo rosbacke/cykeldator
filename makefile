@@ -1,12 +1,12 @@
 CXX:=arm-none-eabi-g++
 OBJ_COPY:=arm-none-eabi-objcopy
-
+GDB:=gdb-multiarch
 
 CXXFLAGS += -mthumb -mcpu=cortex-m3
 
 SPEC:=-specs=nosys.specs
 
-FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions
+FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions -fno-rtti
 
 
 STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
@@ -22,7 +22,7 @@ DEF=-DSTM32F10X_MD=1
 INC:=-I$(CMSIS_D)/CoreSupport -I$(CMSIS_D)/DeviceSupport/ST/STM32F10x
 INC+=-Isrc
 INC+=-I../delegate/include
-FLAGS_TEST=$(INC) -I/usr/src/gtest/include -L /usr/src/gtest -pthread
+FLAGS_TEST=$(INC) -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
 
 # INC+=-I$(STFW_D)/STM32F10x_StdPeriph_Driver/inc
 
@@ -40,7 +40,7 @@ signalchain_test: src/SignalChain.cpp src/SignalChain_test.cpp
 main.hex : main.elf
 	arm-none-eabi-objcopy -O ihex main.elf main.hex
 
-main.elf: $(SRC) makefile
+main.elf: $(SRC) makefile src/Strings.h
 	arm-none-eabi-g++ $(DEF) $(INC) $(FLAGS) -Tmcu_src/stm32_flash.ld -o main.elf $(SRC)
 	arm-none-eabi-objdump -S main.elf > main_dump.txt
 
@@ -50,14 +50,14 @@ upload: main.elf
 	#echo 'file main.elf' >> upload.gdb
 	echo 'load' >> upload.gdb
 	echo 'monitor reset' >> upload.gdb
-	arm-none-eabi-gdb --batch -x upload.gdb main.elf
+	$(GDB) --batch -x upload.gdb main.elf
 
 debug: main.elf
 	echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > debug.gdb
 	#echo 'file main.elf' >> upload.gdb
 	echo 'load' >> debug.gdb
 	echo 'monitor reset halt' >> debug.gdb
-	arm-none-eabi-gdb -x debug.gdb main.elf
+	$(GDB) -x debug.gdb main.elf
 
 start_openocd:
 	sudo openocd  -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg

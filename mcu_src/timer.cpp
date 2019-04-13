@@ -45,8 +45,16 @@ void setTimerCallback( TimerCB cb, void* ctx )
 void delay( int ms )
 {
     uint32_t base = systickCnt;
-    while ( ( systickCnt - base ) < ms )
-        ;
+    uint32_t cnt;
+    do {
+    	cnt = systickCnt;
+
+    } while (( cnt - base ) < ms);
+
+    //negEdgeTS = systickCnt;
+    //if ( s_timerCB )
+    //    s_timerCB( TickPoint( count++, negEdgeTS, posEdgeTS ), s_timerCBCtx );
+
 }
 
 uint32_t timer_counterU32()
@@ -80,10 +88,10 @@ void setupTimer()
     SysTick_Config( 72000 );
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
 
-    GPIOA->CRH &= ~( 0xfu << ( 0 * 4 ) );
-    GPIOA->CRH |= ( 2u << ( 0 * 4 ) );
+    GPIOA->CRH &= ~(uint32_t{0xf});
+    GPIOA->CRH |= GPIO_CRH_CNF9_0;
 
     // Enable counter, rest is default.
     TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;

@@ -8,6 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "Strings.h"
+
 #define DEF_HANDLER( x )                                                       \
     extern "C" void x( void )                                                  \
     {                                                                          \
@@ -40,6 +42,9 @@ static void timerCB( const TickPoint& tp, void* ctx )
 static void write()
 {
     __disable_irq();
+    // uint2str(buffer, timerSysTick());
+    //usart_blockwrite(buffer);
+    //usart_blockwrite("\n");
     if ( !s_newVal )
     {
         __enable_irq();
@@ -49,8 +54,17 @@ static void write()
     s_newVal = false;
     __enable_irq();
 
-    sprintf( buffer, "0x08x 0x08x 0x08\n", tp.m_count, tp.m_failingEdge,
-             tp.m_raisingEdge );
+    // usart_blockwrite( "Hello." );
+
+    char* p = buffer;
+    p = uint2str(p, tp.m_count);
+    *p++ = ' ';
+    p = uint2str(p, tp.m_failingEdge);
+    *p++ = ' ';
+    p = uint2str(p, tp.m_raisingEdge);
+    *p++ = '\r';
+    *p++ = '\n';
+    *p++ = '\0';
     usart_blockwrite( buffer );
 }
 
@@ -97,8 +111,10 @@ int main()
     setLed( false );
     while ( 1 )
     {
-        write();
+    	write();
+    	//usart_blockwrite( "Hello." );
         setLed( ( timerSysTick() & 0x200 ) != 0 );
+        delay(500);
     }
 }
 
@@ -108,4 +124,6 @@ extern "C" void _exit( int x )
         ;
 }
 
-extern "C" void _init( int x ) {}
+extern "C" void _init( int x )
+{}
+
