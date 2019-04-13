@@ -62,6 +62,8 @@ static void write()
     p = uint2str(p, tp.m_failingEdge);
     *p++ = ' ';
     p = uint2str(p, tp.m_raisingEdge);
+    *p++ = ' ';
+    p = uint2str(p, timerSysTick());
     *p++ = '\r';
     *p++ = '\n';
     *p++ = '\0';
@@ -114,7 +116,7 @@ int main()
     	write();
     	//usart_blockwrite( "Hello." );
         setLed( ( timerSysTick() & 0x200 ) != 0 );
-        delay(500);
+        delay(1);
     }
 }
 

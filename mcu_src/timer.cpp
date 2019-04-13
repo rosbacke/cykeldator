@@ -50,11 +50,6 @@ void delay( int ms )
     	cnt = systickCnt;
 
     } while (( cnt - base ) < ms);
-
-    //negEdgeTS = systickCnt;
-    //if ( s_timerCB )
-    //    s_timerCB( TickPoint( count++, negEdgeTS, posEdgeTS ), s_timerCBCtx );
-
 }
 
 uint32_t timer_counterU32()
@@ -136,7 +131,7 @@ void setupTimer()
  * - CC taken (low value)
  * -> No update of CCR.
  */
-void TIM2_IRQHandler( void )
+extern "C" void TIM2_IRQHandler( void )
 {
     uint16_t srMask = 0;
     uint16_t sr = TIM2->SR;
