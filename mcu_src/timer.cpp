@@ -7,7 +7,7 @@
 
 
 /**
- * Timer2 is set up to count crystal clock pulses (8 mHz) and then use interrupt
+ * Timer1 is set up to count crystal clock pulses (8 mHz) and then use interrupt
  * to extend that count. The low 16 bits are given by the hardware counter and
  * upper 16 bits by interrupts.
  *
@@ -17,8 +17,8 @@
  *
  * Input Pin: PA2
  * Timer TIM2.
- * Capture register: CAP2.
  * Capture register: CAP3.
+ * Capture register: CAP4.
  */
 
 volatile uint32_t systickCnt;
@@ -80,7 +80,7 @@ uint16_t timer_sysTickDelta() { return cntMsb; }
 uint32_t timerSysTick() { return systickCnt; }
 
 /**
- * Set up PA8 as input to monitor, Timer2 to count up 0-0xffff,
+ * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
  * CCR3 to detect positive flank and CCR4 for negative flank.
  */
 void setupTimer()
@@ -90,8 +90,8 @@ void setupTimer()
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
 
-    GPIOA->CRH &= ~(uint32_t{0xf});
-    GPIOA->CRH |= GPIO_CRH_CNF9_0;
+    GPIOA->CRL &= ~(uint32_t{0xf00});
+    GPIOA->CRL |= GPIO_CRL_CNF2_0;
 
     // Enable counter, rest is default.
     TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
