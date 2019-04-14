@@ -85,8 +85,12 @@ void setupTimer()
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
 
+    // Input with pullup.
     GPIOA->CRL &= ~(uint32_t{0xf00});
-    GPIOA->CRL |= GPIO_CRL_CNF2_0;
+    GPIOA->CRL |= GPIO_CRL_CNF2_1;
+
+    // Pull resistor up.
+    GPIOA->ODR |= 4;
 
     // Enable counter, rest is default.
     TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
@@ -102,6 +106,9 @@ void setupTimer()
     TIM2->CCER |= TIM_CCER_CC3E | TIM_CCER_CC4E | TIM_CCER_CC4P;
 
     TIM2->DIER |= TIM_DIER_UIE | TIM_DIER_CC3IE | TIM_DIER_CC4IE;
+
+    // Add 8:8 filtering. Still < 1us resolution so shoud be ok.
+    TIM2->CCMR2 |= TIM_CCMR2_IC3F_0 * 9 + TIM_CCMR2_IC4F_0 * 9;
 }
 
 /* Case 1:
@@ -152,8 +159,9 @@ extern "C" void TIM2_IRQHandler( void )
         uint16_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
                            ? cntMsb - 1
                            : cntMsb;
-        posEdgeTS = TIM2->CCR3 | ( msb << 16u );
+        posEdgeTS = capture | ( uint32_t{msb} << 16u );
         send = true;
+        count++;
         srMask |= TIM_SR_CC3IF;
     }
     if ( sr & TIM_SR_CC4IF )
@@ -162,13 +170,13 @@ extern "C" void TIM2_IRQHandler( void )
         uint16_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
                            ? cntMsb - 1
                            : cntMsb;
-        negEdgeTS = TIM2->CCR4 | ( msb << 16u );
+        negEdgeTS = capture | ( uint32_t{msb} << 16u );
         srMask |= TIM_SR_CC4IF;
     }
     TIM2->SR &= ~( uint32_t )srMask;
 
     if ( send && s_timerCB )
-        s_timerCB( TickPoint( count++, negEdgeTS, posEdgeTS ), s_timerCBCtx );
+        s_timerCB( TickPoint( count, negEdgeTS, posEdgeTS ), s_timerCBCtx );
 }
 
 extern "C" void SysTick_Handler( void )

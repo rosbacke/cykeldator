@@ -68,4 +68,4 @@ build:
 
 # Require Boot0 set to '1' and an manual reset before upload.
 uploadserial: main.hex
-	stm32flash /dev/ttyACM0 -w main.hex
+	stm32flash /dev/ttyACM1 -w main.hex

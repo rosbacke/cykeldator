@@ -9,3 +9,8 @@ a.out
 main.dis
 main_dump.txt
 mcu_src/openocd.log
+
+debug.gdb
+main.hex
+openocd.log
+signalchain_test
