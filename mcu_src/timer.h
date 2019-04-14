@@ -16,9 +16,6 @@
 
 #include <delegate/delegate.hpp>
 
-
-
-
 class OdoTimer
 {
 public:
@@ -35,9 +32,14 @@ public:
 	template<SleepCB = nullptr>
 	void delay(int ms);
 
-	// Called when a timer pulse have been decoded.
-	delegate<void(const TickPoint&)> pulseCB;
+	// Called when a timer pulse can be fetched with getTP.
+	delegate<void()> pulseCB;
 
+	// Call with interrupts disabled.
+	TickPoint getTP() const
+	{
+		return m_tp;
+	}
 private:
 	void setupTimer();
 
@@ -50,6 +52,15 @@ private:
 
 	TIM_TypeDef* m_dev = nullptr;
 	std::atomic<uint32_t> m_sysTick{0};
+
+	std::atomic<uint16_t> m_cntMsb{0};
+	std::atomic<uint32_t> m_cntMsb2{0};
+	std::atomic<uint32_t> m_count{0};
+
+	std::atomic<uint32_t> m_posEdgeTS{0};
+	std::atomic<uint32_t> m_negEdgeTS{0};
+
+	TickPoint m_tp;
 };
 
 template<OdoTimer::SleepCB cb>

@@ -105,7 +105,16 @@ MCU_ACCESS_PORT(RCC, RCC, rcc);
 
 #undef SysTick
 #define SysTick ::hwports::systick
+#undef GPIOA
+#define GPIOA ::hwports::gpioa
+#undef GPIOC
+#define GPIOC ::hwports::gpioc
+#undef TIM2
+#define TIM2 ::hwports::tim2
 
+
+// Note: RCC is used before main is called in clock setup etc.
+// Seems to be issues with replacing it in that code.
 //#undef RCC
 //#define RCC ::hwports::rcc
 

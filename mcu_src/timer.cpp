@@ -33,30 +33,13 @@ OdoTimer::OdoTimer( TIM_TypeDef* device )
  */
 
 // Use unittest friendly pointer.
-#undef TIM2
-#define TIM2 m_dev
+//#undef TIM2
+//#define TIM2 m_dev
 #undef RCC
 #define RCC hwports::rcc
-#undef GPIOA
-#define GPIOA hwports::gpioa
-#undef GPIOC
-#define GPIOC hwports::gpioc
 
-
-static std::atomic<uint16_t> cntMsb;
-static std::atomic<uint32_t> cntMsb2;
-
-static std::atomic<uint32_t> posEdgeTS;
-static std::atomic<uint32_t> negEdgeTS;
-static std::atomic<uint32_t> count;
 
 // Input PA2, Tim2, Channel 3.
-
-uint32_t timer_lastNegTP() { return negEdgeTS; }
-
-uint32_t timer_lastPosTP() { return posEdgeTS; }
-
-uint16_t timer_sysTickDelta() { return cntMsb; }
 
 /**
  * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
@@ -125,7 +108,7 @@ void OdoTimer::tim2Isr()
     uint16_t srMask = 0;
     uint16_t sr = TIM2->SR;
     uint16_t cnt = TIM2->CNT;
-    uint16_t cntMsb_ = cntMsb;
+    uint16_t cntMsb_ = m_cntMsb;
 
     bool send = false;
     const bool cntUpdate = sr & TIM_SR_UIF;
@@ -133,7 +116,7 @@ void OdoTimer::tim2Isr()
     {
         cntMsb_++;
         if ( cntMsb_ == 0 )
-            cntMsb2++;
+            m_cntMsb2++;
 
         srMask |= TIM_SR_UIF;
     }
@@ -143,9 +126,10 @@ void OdoTimer::tim2Isr()
         uint32_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
                            ? uint32_t(cntMsb_) - 1u
                            : uint32_t(cntMsb_);
-        posEdgeTS = capture | ( msb << 16u );
+        m_posEdgeTS = capture | ( msb << 16u );
+        m_count++;
+        m_tp = TickPoint(m_count, m_posEdgeTS, m_negEdgeTS);
         send = true;
-        count++;
         srMask |= TIM_SR_CC3IF;
     }
     if ( sr & TIM_SR_CC4IF )
@@ -154,14 +138,14 @@ void OdoTimer::tim2Isr()
         uint32_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
                            ? uint32_t(cntMsb_) - 1u
                            : uint32_t(cntMsb_);
-        negEdgeTS = capture | ( msb << 16u );
+        m_negEdgeTS = capture | ( msb << 16u );
         srMask |= TIM_SR_CC4IF;
     }
-    cntMsb = cntMsb_;
+    m_cntMsb = cntMsb_;
     TIM2->SR &= ~( uint32_t )srMask;
 
     if ( send && pulseCB)
-    	pulseCB( TickPoint( count, negEdgeTS, posEdgeTS ));
+    	pulseCB();
 }
 
 IsrHandlers IsrHandlers::instance;

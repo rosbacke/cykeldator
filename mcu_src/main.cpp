@@ -28,47 +28,8 @@ DEF_HANDLER( DebugMon_Handler );
 DEF_HANDLER( PendSV_Handler );
 DEF_HANDLER( WWDG_IRQHandler );
 
+
 static char s_heap[ 10000 ];
-
-static TickPoint s_tp;
-static std::atomic<bool> s_newVal;
-
-static char buffer[ 200 ];
-
-static void timerCB( void* ctx, const TickPoint& tp)
-{
-    s_tp = tp;
-    s_newVal = true;
-}
-
-static void write(OdoTimer& timer )
-{
-    __disable_irq();
-    // uint2str(buffer, timerSysTick());
-    //usart_blockwrite(buffer);
-    //usart_blockwrite("\n");
-    if ( !s_newVal )
-    {
-        __enable_irq();
-        return;
-    }
-    TickPoint tp = s_tp;
-    s_newVal = false;
-    __enable_irq();
-
-    char* p = buffer;
-    p = uint2str(p, tp.m_count);
-    *p++ = ' ';
-    p = uint2str(p, tp.m_failingEdge);
-    *p++ = ' ';
-    p = uint2str(p, tp.m_raisingEdge);
-    *p++ = ' ';
-    p = uint2str(p, timer.sysTick());
-    *p++ = '\r';
-    *p++ = '\n';
-    *p++ = '\0';
-    usart_blockwrite( buffer );
-}
 
 extern "C" void* _sbrk( intptr_t increment )
 {
@@ -89,37 +50,95 @@ extern "C" void HardFault_Handler( void )
         ;
 }
 
-void setLed( bool on )
+class App
 {
-    if ( on )
-        GPIOC->ODR &= ~uint32_t( 1 << 13 );
-    else
-        GPIOC->ODR |= 1 << 13;
+public:
+	App() : m_timer(hwports::tim2.addr())
+	{
+	    setup();
+	}
+
+	void setup();
+	void write();
+	void run();
+
+private:
+	void timerCB()
+	{
+	    m_newVal = true;
+	}
+
+	std::atomic<bool> m_newVal;
+	OdoTimer m_timer;
+};
+
+
+
+void App::write()
+{
+	static char buffer[ 200 ];
+
+    __disable_irq();
+    if ( !m_newVal )
+    {
+        __enable_irq();
+        return;
+    }
+    TickPoint tp = m_timer.getTP();
+    m_newVal = false;
+    __enable_irq();
+
+    char* p = buffer;
+    p = uint2str(p, tp.m_count);
+    *p++ = ' ';
+    p = uint2str(p, tp.m_failingEdge);
+    *p++ = ' ';
+    p = uint2str(p, tp.m_raisingEdge);
+    *p++ = ' ';
+    p = uint2str(p, m_timer.sysTick());
+    *p++ = '\r';
+    *p++ = '\n';
+    *p++ = '\0';
+    usart_blockwrite( buffer );
 }
 
-void setup(OdoTimer& timer)
+
+void setLed( bool on )
 {
+	using hwports::gpioc;
+    if ( on )
+    	gpioc->ODR &= ~uint32_t( 1 << 13 );
+    else
+        gpioc->ODR |= 1 << 13;
+}
+
+void App::setup()
+{
+	using hwports::gpioc;
     RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
-    GPIOC->CRH |= GPIO_CRH_MODE13_1;
-    GPIOC->CRH |= 0;
+    gpioc->CRH |= GPIO_CRH_MODE13_1;
+    gpioc->CRH |= 0;
     usart_init();
-    timer.pulseCB.set_free_with_void<timerCB>((void*)nullptr);
+    m_timer.pulseCB.set<App, &App::timerCB>(*this);
 }
 
 int main()
 {
-	OdoTimer timer(hwports::tim2.addr());
+	App app;
     SysTick_Config( 72000 );
 
-    setup(timer);
     __enable_irq();
     setLed( false );
+    app.run();
+}
+
+void App::run()
+{
     while ( 1 )
     {
-    	write(timer);
-    	//usart_blockwrite( "Hello." );
-        setLed( ( timer.sysTick() & 0x200 ) != 0 );
-        timer.delay(1);
+    	write();
+        setLed( ( m_timer.sysTick() & 0x200 ) != 0 );
+        m_timer.delay(1);
     }
 }
 
