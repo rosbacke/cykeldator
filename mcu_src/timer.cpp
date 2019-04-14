@@ -3,8 +3,17 @@
 #include "mcuaccess.h"
 #include "usart.h"
 
+#include <delegate/delegate.hpp>
+
 #include <stdint.h>
 #include <atomic>
+
+
+OdoTimer::OdoTimer( TIM_TypeDef* device )
+: m_dev( device )
+{
+	IsrHandlers::del(IsrHandlers::Handler::systick).set<OdoTimer, &OdoTimer::sysTickIsr>(*this);
+}
 
 /**
  * Timer1 is set up to count crystal clock pulses (8 mHz) and then use interrupt
@@ -47,12 +56,12 @@ void setTimerCallback( TimerCB cb, void* ctx )
 // Input PA2, Tim2, Channel 3.
 
 
-void delay( int ms )
+void OdoTimer::delay( int ms )
 {
-    uint32_t base = systickCnt;
+    uint32_t base = m_sysTick;
     uint32_t cnt;
     do {
-    	cnt = systickCnt;
+    	cnt = m_sysTick;
 
     } while (( cnt - base ) < ms);
 }
@@ -76,8 +85,6 @@ uint32_t timer_lastNegTP() { return negEdgeTS; }
 uint32_t timer_lastPosTP() { return posEdgeTS; }
 
 uint16_t timer_sysTickDelta() { return cntMsb; }
-
-uint32_t timerSysTick() { return systickCnt; }
 
 /**
  * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
@@ -187,7 +194,11 @@ extern "C" void TIM2_IRQHandler( void )
         s_timerCB( TickPoint( count, negEdgeTS, posEdgeTS ), s_timerCBCtx );
 }
 
+IsrHandlers IsrHandlers::instance;
+
+using Handler = IsrHandlers::Handler;
+
 extern "C" void SysTick_Handler( void )
 {
-    systickCnt++;
+	IsrHandlers::callIsr(Handler::systick);
 }

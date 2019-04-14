@@ -41,7 +41,7 @@ static void timerCB( const TickPoint& tp, void* ctx )
     s_newVal = true;
 }
 
-static void write()
+static void write(OdoTimer& timer )
 {
     __disable_irq();
     // uint2str(buffer, timerSysTick());
@@ -63,7 +63,7 @@ static void write()
     *p++ = ' ';
     p = uint2str(p, tp.m_raisingEdge);
     *p++ = ' ';
-    p = uint2str(p, timerSysTick());
+    p = uint2str(p, timer.sysTick());
     *p++ = '\r';
     *p++ = '\n';
     *p++ = '\0';
@@ -109,15 +109,16 @@ void setup()
 
 int main()
 {
+	OdoTimer timer(hwports::tim2.addr());
     setup();
     __enable_irq();
     setLed( false );
     while ( 1 )
     {
-    	write();
+    	write(timer);
     	//usart_blockwrite( "Hello." );
-        setLed( ( timerSysTick() & 0x200 ) != 0 );
-        delay(1);
+        setLed( ( timer.sysTick() & 0x200 ) != 0 );
+        timer.delay(1);
     }
 }
 

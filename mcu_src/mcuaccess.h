@@ -22,6 +22,7 @@ template<typename AccessStruct, unsigned devAddr>
 class HwPort
 {
 public:
+	using AccessType = AccessStruct;
 	HwPort() = default;
 	AccessStruct* operator->()
 	{

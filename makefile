@@ -17,19 +17,24 @@ SRC:=$(MCU_SRC:%=mcu_src/%)
 
 #usart.c timer.c drivers.c
 DEF=-DSTM32F10X_MD=1
+
 INC:=-I$(CMSIS_D)/CoreSupport -I$(CMSIS_D)
 INC+=-Isrc
-INC+=-I
+INC+=-Imcu_src
+INC+=-I.
 INC+=-I../delegate/include
-FLAGS_TEST=$(INC) -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
+
+FLAGS_TEST=$(DEF) $(INC) -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
 
 all: main.hex unittest
 
 unittest: signalchain_test
 	./signalchain_test
 
-signalchain_test: src/SignalChain.cpp src/SignalChain_test.cpp
-	g++ $(FLAGS_TEST) -o signalchain_test src/SignalChain.cpp src/SignalChain_test.cpp -lgtest -lgtest_main
+TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp
+
+signalchain_test: $(TEST_SRC)
+	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC) -lgtest -lgtest_main
 	arm-none-eabi-objdump -D main.elf > main.dis 
 
 main.elf: $(SRC) makefile src/Strings.h
