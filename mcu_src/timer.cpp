@@ -21,6 +21,11 @@
  * Capture register: CAP4.
  */
 
+// Use unittest friendly pointer.
+#undef TIM2
+#define TIM2 hwports::tim2
+
+
 static std::atomic<uint32_t> systickCnt;
 
 static std::atomic<uint16_t> cntMsb;
