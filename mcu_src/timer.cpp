@@ -1,10 +1,10 @@
 #include "timer.h"
 
-#include "stm32f10x.h"
+#include "mcuaccess.h"
 #include "usart.h"
 
 #include <stdint.h>
-
+#include <atomic>
 
 /**
  * Timer1 is set up to count crystal clock pulses (8 mHz) and then use interrupt
@@ -21,14 +21,14 @@
  * Capture register: CAP4.
  */
 
-volatile uint32_t systickCnt;
+static std::atomic<uint32_t> systickCnt;
 
-volatile uint16_t cntMsb;
-volatile uint32_t cntMsb2;
+static std::atomic<uint16_t> cntMsb;
+static std::atomic<uint32_t> cntMsb2;
 
-volatile uint32_t posEdgeTS;
-volatile uint32_t negEdgeTS;
-volatile uint32_t count;
+static std::atomic<uint32_t> posEdgeTS;
+static std::atomic<uint32_t> negEdgeTS;
+static std::atomic<uint32_t> count;
 
 static TimerCB s_timerCB = nullptr;
 static void* s_timerCBCtx = nullptr;
@@ -143,12 +143,14 @@ extern "C" void TIM2_IRQHandler( void )
     uint16_t srMask = 0;
     uint16_t sr = TIM2->SR;
     uint16_t cnt = TIM2->CNT;
+    uint16_t cntMsb_ = cntMsb;
+
     bool send = false;
     const bool cntUpdate = sr & TIM_SR_UIF;
     if ( cntUpdate )
     {
-        cntMsb++;
-        if ( cntMsb == 0 )
+        cntMsb_++;
+        if ( cntMsb_ == 0 )
             cntMsb2++;
 
         srMask |= TIM_SR_UIF;
@@ -156,10 +158,10 @@ extern "C" void TIM2_IRQHandler( void )
     if ( sr & TIM_SR_CC3IF )
     {
         uint16_t capture = TIM2->CCR3;
-        uint16_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
-                           ? cntMsb - 1
-                           : cntMsb;
-        posEdgeTS = capture | ( uint32_t{msb} << 16u );
+        uint32_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
+                           ? uint32_t(cntMsb_) - 1u
+                           : uint32_t(cntMsb_);
+        posEdgeTS = capture | ( msb << 16u );
         send = true;
         count++;
         srMask |= TIM_SR_CC3IF;
@@ -167,12 +169,13 @@ extern "C" void TIM2_IRQHandler( void )
     if ( sr & TIM_SR_CC4IF )
     {
         uint16_t capture = TIM2->CCR4;
-        uint16_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
-                           ? cntMsb - 1
-                           : cntMsb;
-        negEdgeTS = capture | ( uint32_t{msb} << 16u );
+        uint32_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
+                           ? uint32_t(cntMsb_) - 1u
+                           : uint32_t(cntMsb_);
+        negEdgeTS = capture | ( msb << 16u );
         srMask |= TIM_SR_CC4IF;
     }
+    cntMsb = cntMsb_;
     TIM2->SR &= ~( uint32_t )srMask;
 
     if ( send && s_timerCB )
@@ -181,14 +184,5 @@ extern "C" void TIM2_IRQHandler( void )
 
 extern "C" void SysTick_Handler( void )
 {
-#if 0
-	static bool sw;
-	sw = !sw;
-
-	if (sw)
-		GPIOA->ODR &= ~0x100u;
-	else
-		GPIOA->ODR |= 0x100u;
-#endif
     systickCnt++;
 }

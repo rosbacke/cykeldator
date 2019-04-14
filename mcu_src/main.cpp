@@ -2,11 +2,13 @@
 
 #include "usart.h"
 
-#include <stm32f10x.h>
+#include "mcuaccess.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <atomic>
 
 #include "Strings.h"
 
@@ -29,7 +31,7 @@ DEF_HANDLER( WWDG_IRQHandler );
 static char s_heap[ 10000 ];
 
 static TickPoint s_tp;
-static volatile bool s_newVal;
+static std::atomic<bool> s_newVal;
 
 static char buffer[ 200 ];
 
@@ -54,8 +56,6 @@ static void write()
     s_newVal = false;
     __enable_irq();
 
-    // usart_blockwrite( "Hello." );
-
     char* p = buffer;
     p = uint2str(p, tp.m_count);
     *p++ = ' ';
@@ -75,8 +75,9 @@ extern "C" void* _sbrk( intptr_t increment )
     static char* end = s_heap;
     if ( increment + end <= s_heap + sizeof s_heap )
     {
+    	void* oldEnd = end;
         end += increment;
-        return end;
+        return oldEnd;
     }
     while ( 1 )
         ;
