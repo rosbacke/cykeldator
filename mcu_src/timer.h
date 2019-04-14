@@ -16,23 +16,53 @@
 
 #include <delegate/delegate.hpp>
 
+
+
+
 class OdoTimer
 {
 public:
 	OdoTimer(TIM_TypeDef* device);
+
+	// Return current value of the running systick counter. (ms)
 	uint32_t sysTick() { return m_sysTick; }
 
+	using SleepCB = void (*)(void);
+
+	// Delay for a number of ms.
+	// Can take a template parameter with a callback to be repeatedly
+	// called during the sleep.
+	template<SleepCB = nullptr>
 	void delay(int ms);
 
+	// Called when a timer pulse have been decoded.
+	delegate<void(const TickPoint&)> pulseCB;
+
 private:
+	void setupTimer();
+
     void sysTickIsr()
     {
     	m_sysTick++;
     }
 
+    void tim2Isr();
+
 	TIM_TypeDef* m_dev = nullptr;
 	std::atomic<uint32_t> m_sysTick{0};
 };
+
+template<OdoTimer::SleepCB cb>
+void OdoTimer::delay( int ms )
+{
+    uint32_t base = m_sysTick;
+    auto done = [&](uint32_t cnt) { return int32_t(cnt - base) >= ms; } ;
+    while(!done(m_sysTick))
+    {
+    	if (cb)
+    		cb();
+    }
+}
 
 class IsrHandlers
 {
@@ -65,21 +95,11 @@ public:
 
 using TimerCB = void ( * )( const TickPoint& tp, void* ctx );
 
-void setTimerCallback( TimerCB cb, void* ctx );
-
-void setupTimer();
-
-uint32_t timer_counterU32();
-
 uint16_t timer_sysTickDelta();
 
 uint32_t timer_lastNegTP();
 
 uint32_t timer_lastPosTP();
-
-void delay( int delay );
-
-uint32_t timerSysTick();
 
 
 #endif /* STM32_SRC_TIMER_H_ */

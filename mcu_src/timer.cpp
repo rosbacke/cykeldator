@@ -13,6 +13,8 @@ OdoTimer::OdoTimer( TIM_TypeDef* device )
 : m_dev( device )
 {
 	IsrHandlers::del(IsrHandlers::Handler::systick).set<OdoTimer, &OdoTimer::sysTickIsr>(*this);
+	IsrHandlers::del(IsrHandlers::Handler::tim2).set<OdoTimer, &OdoTimer::tim2Isr>(*this);
+    setupTimer();
 }
 
 /**
@@ -32,10 +34,14 @@ OdoTimer::OdoTimer( TIM_TypeDef* device )
 
 // Use unittest friendly pointer.
 #undef TIM2
-#define TIM2 hwports::tim2
+#define TIM2 m_dev
+#undef RCC
+#define RCC hwports::rcc
+#undef GPIOA
+#define GPIOA hwports::gpioa
+#undef GPIOC
+#define GPIOC hwports::gpioc
 
-
-static std::atomic<uint32_t> systickCnt;
 
 static std::atomic<uint16_t> cntMsb;
 static std::atomic<uint32_t> cntMsb2;
@@ -44,41 +50,7 @@ static std::atomic<uint32_t> posEdgeTS;
 static std::atomic<uint32_t> negEdgeTS;
 static std::atomic<uint32_t> count;
 
-static TimerCB s_timerCB = nullptr;
-static void* s_timerCBCtx = nullptr;
-
-void setTimerCallback( TimerCB cb, void* ctx )
-{
-    s_timerCB = cb;
-    s_timerCBCtx = ctx;
-}
-
 // Input PA2, Tim2, Channel 3.
-
-
-void OdoTimer::delay( int ms )
-{
-    uint32_t base = m_sysTick;
-    uint32_t cnt;
-    do {
-    	cnt = m_sysTick;
-
-    } while (( cnt - base ) < ms);
-}
-
-uint32_t timer_counterU32()
-{
-    uint16_t cnt0_15;
-    uint16_t cnt16_31;
-
-    do
-    {
-        cnt0_15 = TIM2->CNT;
-        cnt16_31 = cntMsb;
-    } while ( ( ( int16_t )( TIM2->CNT - cnt0_15 ) ) < 0 );
-
-    return cnt16_31 << 16u | cnt0_15;
-}
 
 uint32_t timer_lastNegTP() { return negEdgeTS; }
 
@@ -90,10 +62,8 @@ uint16_t timer_sysTickDelta() { return cntMsb; }
  * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
  * CCR3 to detect positive flank and CCR4 for negative flank.
  */
-void setupTimer()
+void OdoTimer::setupTimer()
 {
-    SysTick_Config( 72000 );
-
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
 
@@ -108,8 +78,8 @@ void setupTimer()
     TIM2->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
 
     /* set Priority for Cortex-M3 System Interrupts */
-    NVIC_SetPriority( TIM2_IRQn, ( 1 << __NVIC_PRIO_BITS ) - 1 );
-    NVIC_EnableIRQ( TIM2_IRQn );
+    hwports::setIsrPriority( TIM2_IRQn, ( 1 << __NVIC_PRIO_BITS ) - 1 );
+    hwports::enableIrq( TIM2_IRQn );
 
     // Set up CC3/CC4 as input capture on IT3.
     TIM2->CCMR2 |= TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1;
@@ -150,7 +120,7 @@ void setupTimer()
  * - CC taken (low value)
  * -> No update of CCR.
  */
-extern "C" void TIM2_IRQHandler( void )
+void OdoTimer::tim2Isr()
 {
     uint16_t srMask = 0;
     uint16_t sr = TIM2->SR;
@@ -190,8 +160,8 @@ extern "C" void TIM2_IRQHandler( void )
     cntMsb = cntMsb_;
     TIM2->SR &= ~( uint32_t )srMask;
 
-    if ( send && s_timerCB )
-        s_timerCB( TickPoint( count, negEdgeTS, posEdgeTS ), s_timerCBCtx );
+    if ( send && pulseCB)
+    	pulseCB( TickPoint( count, negEdgeTS, posEdgeTS ));
 }
 
 IsrHandlers IsrHandlers::instance;
@@ -201,4 +171,9 @@ using Handler = IsrHandlers::Handler;
 extern "C" void SysTick_Handler( void )
 {
 	IsrHandlers::callIsr(Handler::systick);
+}
+
+extern "C" void TIM2_IRQHandler( void )
+{
+	IsrHandlers::callIsr(Handler::tim2);
 }

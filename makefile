@@ -24,7 +24,7 @@ INC+=-Imcu_src
 INC+=-I.
 INC+=-I../delegate/include
 
-FLAGS_TEST=$(DEF) $(INC) -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
+FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
 
 all: main.hex unittest
 
@@ -44,12 +44,15 @@ main.elf: $(SRC) makefile src/Strings.h
 main.hex : main.elf
 	arm-none-eabi-objcopy -O ihex main.elf main.hex
 	arm-none-eabi-objdump -D main.elf > main.txt
-	
+
 upload: main.elf
-	echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
+	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
 	#echo 'file main.elf' >> upload.gdb
-	echo 'load' >> upload.gdb
-	echo 'monitor reset' >> upload.gdb
+	@echo 'monitor halt'
+	@echo 'monitor reset halt'
+	@echo 'load' >> upload.gdb
+	@echo 'monitor reset' >> upload.gdb
+	@echo 'monitor exit' >> upload.gdb
 	$(GDB) --batch -x upload.gdb main.elf
 
 debug: main.elf

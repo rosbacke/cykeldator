@@ -18,7 +18,7 @@ namespace hwports
  * access pointers to this, it is possible to redeclare the pointer to
  * a normal memory struct in unit tests.
  */
-template<typename AccessStruct, unsigned devAddr>
+template<typename AccessStruct, unsigned realAddr, AccessStruct* fakeAddr>
 class HwPort
 {
 public:
@@ -44,16 +44,71 @@ public:
 	}
 
 private:
-	AccessStruct* m_instance = reinterpret_cast<AccessStruct*>(devAddr);
+#ifdef UNIT_TEST
+	AccessStruct* m_instance = fakeAddr;
+#else
+	AccessStruct* m_instance = reinterpret_cast<AccessStruct*>(realAddr);
+#endif
 };
 
+void setIsrPriority(IRQn_Type IRQn, uint32_t priority);
+void enableIrq(IRQn_Type IRQn);
+
+
+
+#ifdef UNIT_TEST
+
+
+inline void setIsrPriority(IRQn_Type IRQn, uint32_t priority)
+{}
+
+inline void enableIrq(IRQn_Type IRQn)
+{}
 
 #define MCU_ACCESS_PORT(drv, device, objName) \
-	HwPort<drv##_TypeDef, device##_BASE> objName;
+	extern drv##_TypeDef objName##Fake; \
+	extern HwPort<drv##_TypeDef, 0, &objName##Fake> objName;
 
-extern MCU_ACCESS_PORT(TIM, TIM2, tim2);
-extern MCU_ACCESS_PORT(GPIO, GPIOA, gpioa);
-extern MCU_ACCESS_PORT(GPIO, GPIOC, gpioc);
+#define MCU_ACCESS_PORT_DEF(drv, device, objName) \
+	drv##_TypeDef objName##Fake; \
+	HwPort<drv##_TypeDef, 0, &objName##Fake> objName;
+
+extern SysTick_Type systickFake;
+extern HwPort<SysTick_Type, 0, &systickFake> systick;
+
+#else
+
+inline void setIsrPriority(IRQn_Type IRQn, uint32_t priority)
+{
+	NVIC_SetPriority( IRQn, priority );
+}
+inline void enableIrq(IRQn_Type IRQn)
+{
+	NVIC_EnableIRQ( IRQn );
+}
+
+#define MCU_ACCESS_PORT(drv, device, objName) \
+	extern HwPort<drv##_TypeDef, device##_BASE, nullptr> objName;
+
+#define MCU_ACCESS_PORT_DEF(drv, device, objName) \
+	HwPort<drv##_TypeDef, device##_BASE, nullptr> objName;
+
+extern HwPort<SysTick_Type, SysTick_BASE, nullptr> systick;
+
+#endif
+
+MCU_ACCESS_PORT(TIM, TIM2, tim2);
+MCU_ACCESS_PORT(GPIO, GPIOA, gpioa);
+MCU_ACCESS_PORT(GPIO, GPIOC, gpioc);
+MCU_ACCESS_PORT(RCC, RCC, rcc);
+
+
+#undef SysTick
+#define SysTick ::hwports::systick
+
+//#undef RCC
+//#define RCC ::hwports::rcc
+
 }
 
 #endif /* MCU_SRC_MCUACCESS_H_ */

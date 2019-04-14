@@ -35,7 +35,7 @@ static std::atomic<bool> s_newVal;
 
 static char buffer[ 200 ];
 
-static void timerCB( const TickPoint& tp, void* ctx )
+static void timerCB( void* ctx, const TickPoint& tp)
 {
     s_tp = tp;
     s_newVal = true;
@@ -97,20 +97,21 @@ void setLed( bool on )
         GPIOC->ODR |= 1 << 13;
 }
 
-void setup()
+void setup(OdoTimer& timer)
 {
     RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
     GPIOC->CRH |= GPIO_CRH_MODE13_1;
     GPIOC->CRH |= 0;
     usart_init();
-    setupTimer();
-    setTimerCallback( timerCB, nullptr );
+    timer.pulseCB.set_free_with_void<timerCB>((void*)nullptr);
 }
 
 int main()
 {
 	OdoTimer timer(hwports::tim2.addr());
-    setup();
+    SysTick_Config( 72000 );
+
+    setup(timer);
     __enable_irq();
     setLed( false );
     while ( 1 )
