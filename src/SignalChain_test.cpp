@@ -12,7 +12,7 @@
 void sendTP(RawSignalConditioning& rsc, uint32_t cnt, uint32_t assert_us, uint32_t negate_us)
 {
 	TickPoint tp(cnt, assert_us * 72,negate_us * 72);
-	rsc.reportTickPoint(tp);
+	rsc.addTickPoint(tp);
 }
 
 void sendSysTick(SignalChain& sc, uint32_t tick)
@@ -36,7 +36,7 @@ TEST(RawSignalConditioning, construction)
 	ASSERT_EQ(rsc.m_state, State::NO_DATA);
 	ASSERT_EQ(rsc.m_lastSystick, 0);
 
-	rsc.reportSystick(10);
+	rsc.addSystick(10);
 	ASSERT_EQ(rsc.m_state, State::NO_DATA);
 	ASSERT_EQ(rsc.m_lastSystick, 10);
 

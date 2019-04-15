@@ -61,6 +61,7 @@ public:
 	void setup();
 	void write();
 	void run();
+	void setLed( bool on );
 
 private:
 	void timerCB()
@@ -103,7 +104,7 @@ void App::write()
 }
 
 
-void setLed( bool on )
+void App::setLed( bool on )
 {
 	using hwports::gpioc;
     if ( on )
@@ -122,15 +123,6 @@ void App::setup()
     m_timer.pulseCB.set<App, &App::timerCB>(*this);
 }
 
-int main()
-{
-	App app;
-    SysTick_Config( 72000 );
-
-    __enable_irq();
-    setLed( false );
-    app.run();
-}
 
 void App::run()
 {
@@ -138,8 +130,18 @@ void App::run()
     {
     	write();
         setLed( ( m_timer.sysTick() & 0x200 ) != 0 );
-        m_timer.delay(1);
+        m_timer.delay<__WFI>(0);
     }
+}
+
+int main()
+{
+    SysTick_Config( 72000 );
+	App app;
+
+    __enable_irq();
+    app.setLed( false );
+    app.run();
 }
 
 extern "C" void _exit( int x )

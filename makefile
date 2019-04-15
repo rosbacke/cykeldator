@@ -26,14 +26,18 @@ INC+=-I../delegate/include
 
 FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
 
-all: main.hex unittest
+all: main.hex unittest interpreter
 
 unittest: signalchain_test
 	./signalchain_test
 
 TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp
 
-signalchain_test: $(TEST_SRC)
+
+interpreter : src/interpreter.cpp src/SignalChain.cpp
+	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp -lfmt
+
+signalchain_test: $(TEST_SRC) src/SignalChain.h
 	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC) -lgtest -lgtest_main
 	arm-none-eabi-objdump -D main.elf > main.dis 
 

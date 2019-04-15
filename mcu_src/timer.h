@@ -68,11 +68,11 @@ void OdoTimer::delay( int ms )
 {
     uint32_t base = m_sysTick;
     auto done = [&](uint32_t cnt) { return int32_t(cnt - base) >= ms; } ;
-    while(!done(m_sysTick))
-    {
+    do {
     	if (cb)
     		cb();
-    }
+    } while(!done(m_sysTick));
+
 }
 
 class IsrHandlers
