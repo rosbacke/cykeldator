@@ -33,3 +33,5 @@ Verkar fungera i stora drag. Några observationer:
 Så, sensorn fungerar relativt bra. Finns dock utrymme för förbättring, kanske 3D montage
 av hållare med bättre kontroll av ljusavskärmning. 
 Notera, var molnigt under test. Oklart vad solen gör.
+Har rättat en bugg i uppräckning av count efter denna mätserie. Finns risk att mätningar
+tagits men inte rapporterats upp.
