@@ -8,6 +8,7 @@ SPEC:=-specs=nosys.specs
 
 FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions -fno-rtti
 
+HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h 
 
 STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
@@ -34,14 +35,14 @@ unittest: signalchain_test
 TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp
 
 
-interpreter : src/interpreter.cpp src/SignalChain.cpp
+interpreter : src/interpreter.cpp src/SignalChain.cpp 
 	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp -lfmt
 
-signalchain_test: $(TEST_SRC) src/SignalChain.h mcu_src/mcuaccess.h
+signalchain_test: $(TEST_SRC) $(HEADERS)
 	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC) -lgtest -lgtest_main
 	arm-none-eabi-objdump -D main.elf > main.dis 
 
-main.elf: $(SRC) makefile src/Strings.h
+main.elf: $(SRC) makefile  $(HEADERS)
 	arm-none-eabi-g++ $(DEF) $(INC) $(FLAGS) -Tmcu_src/stm32_flash.ld -o main.elf $(SRC)
 	arm-none-eabi-objdump -C -S main.elf > main_dump.txt
 

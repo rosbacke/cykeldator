@@ -8,50 +8,30 @@
 #include "usart.h"
 
 #include "mcuaccess.h"
-#include "isr.h"
+#include "isr_project.h"
 
 #include <stdbool.h>
 
 
-bool rbEmpty( RingBuffer_t* rb ) { return rb->readIndex == rb->writeIndex; }
-
-static inline void advance( int* cnt_p )
+bool RingBuffer::read( uint8_t* b )
 {
-    if ( ++*cnt_p == BUF_SIZE )
-        *cnt_p = 0;
-}
-
-bool rbRead( RingBuffer_t* rb, uint8_t* b )
-{
-    if ( rbEmpty( rb ) )
+    if ( empty() )
         return false;
-    *b = rb->buffer[ rb->readIndex ];
-    advance( &rb->readIndex );
+    *b = buffer[ readIndex ];
+    advance( &readIndex );
     return true;
 }
 
-bool Usart::rbWrite( RingBuffer_t* rb, uint8_t b )
+bool RingBuffer::write( uint8_t b )
 {
-    int next = rb->writeIndex;
+    int next = writeIndex;
     advance( &next );
-    if ( next == rb->readIndex )
+    if ( next == readIndex )
         return false;
-    rb->buffer[ rb->writeIndex ] = b;
-    rb->writeIndex = next;
+    buffer[ writeIndex ] = b;
+    writeIndex = next;
     return true;
 }
-
-#if 0
-struct UsartDriver
-{
-    USART_TypeDef* regs;
-
-    RingBuffer_t rx;
-    RingBuffer_t tx;
-};
-#endif
-
-static struct Usart s_usart(hwports::usart1.addr());
 
 void Usart::isr()
 {
@@ -62,12 +42,12 @@ void Usart::isr()
     {
         uint8_t b = regs->DR;
         regs->DR = b;
-        rbWrite( &ud->rx, b );
+        rx.write( b );
     }
     if ( sr & USART_SR_TXE )
     {
         uint8_t b;
-        if ( rbRead( &ud->tx, &b ) )
+        if ( tx.read( &b ) )
         {
             regs->DR = b;
         }
@@ -78,38 +58,32 @@ void Usart::isr()
     }
 }
 
-bool Usart::usart_readByte( uint8_t* data ) { return rbRead( &s_usart.rx, data ); }
-
-void usart_init()
+bool Usart::readByte( uint8_t* data )
 {
-	Usart::setupUsart1(s_usart);
+    return rx.read( data );
 }
 
-void Usart::usart_checkRead()
+void Usart::checkRead()
 {
-    if ( USART1->SR & USART_SR_RXNE )
+    if ( m_regs->SR & USART_SR_RXNE )
     {
-        rbWrite( &s_usart.rx, USART1->DR );
+        rx.write( m_regs->DR );
     }
 }
 
-void usart_blockwrite( const char* str )
+void Usart::blockwrite( const char* str )
 {
-    while ( *str )
-    {
-        while ( ( USART1->SR & USART_SR_TXE ) == 0 )
-            ;
-        USART1->DR = *str++;
-    }
-    while ( ( USART1->SR & USART_SR_TC ) == 0 )
-        ;
-}
+	__disable_irq();
+	while(*str)
+		tx.write(*str++);
+    m_regs->CR1 |= USART_CR1_TXEIE;
+	__enable_irq();
 
+}
 
 Usart::Usart(USART_TypeDef* regs)
-{
-	m_regs = regs;
-}
+: m_regs(regs)
+{}
 
 void Usart::setupUsart1(Usart& usart)
 {

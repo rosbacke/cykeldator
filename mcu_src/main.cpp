@@ -1,6 +1,7 @@
 #include "timer.h"
 
 #include "usart.h"
+#include "isr_project.h"
 
 #include "mcuaccess.h"
 
@@ -53,15 +54,17 @@ extern "C" void HardFault_Handler( void )
 class App
 {
 public:
-	App() : m_timer(hwports::tim2.addr())
-	{
-	    setup();
-	}
+  App()
+    : m_timer( hwports::tim2.addr() ),
+      m_usart1( hwports::usart1.addr())
+  {
+      setup();
+  }
 
-	void setup();
-	void write();
-	void run();
-	void setLed( bool on );
+  void setup();
+  void write();
+  void run();
+  void setLed( bool on );
 
 private:
 	void timerCB()
@@ -71,6 +74,7 @@ private:
 
 	std::atomic<bool> m_newVal;
 	OdoTimer m_timer;
+	Usart m_usart1;
 };
 
 
@@ -100,7 +104,7 @@ void App::write()
     *p++ = '\r';
     *p++ = '\n';
     *p++ = '\0';
-    usart_blockwrite( buffer );
+    m_usart1.blockwrite( buffer );
 }
 
 
@@ -116,10 +120,10 @@ void App::setLed( bool on )
 void App::setup()
 {
 	using hwports::gpioc;
-    RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+	hwports::rcc->APB2ENR |= RCC_APB2ENR_IOPCEN;
     gpioc->CRH |= GPIO_CRH_MODE13_1;
     gpioc->CRH |= 0;
-    usart_init();
+	Usart::setupUsart1(m_usart1);
     m_timer.pulseCB.set<App, &App::timerCB>(*this);
 }
 
@@ -133,6 +137,7 @@ void App::run()
         m_timer.delay<__WFI>(0);
     }
 }
+
 
 int main()
 {
@@ -152,4 +157,3 @@ extern "C" void _exit( int x )
 
 extern "C" void _init( int x )
 {}
-

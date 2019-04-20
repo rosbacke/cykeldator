@@ -14,41 +14,46 @@
 
 #define BUF_SIZE 200
 
-typedef struct RingBuffer
+class RingBuffer
 {
+public:
+	bool empty() const
+	{
+		return readIndex == writeIndex;
+	}
+
+	static inline void advance( int* cnt_p )
+	{
+	    if ( ++*cnt_p == BUF_SIZE )
+	        *cnt_p = 0;
+	}
+	bool read( uint8_t* b );
+	bool write( uint8_t b );
+
+private:
     uint8_t buffer[ BUF_SIZE ];
-    int readIndex;
-    int writeIndex;
-} RingBuffer_t;
+    int readIndex=0;
+    int writeIndex=0;
+};
 
 class Usart
 {
 public:
 	Usart(USART_TypeDef* regs);
+	void blockwrite( const char* str );
 
 	static void setupUsart1(Usart& usart);
 
+
 private:
 	void isr();
-	bool usart_readByte( uint8_t* data );
-	bool rbWrite( RingBuffer_t* rb, uint8_t b );
-	void usart_checkRead();
+	bool readByte( uint8_t* data );
+	void checkRead();
 
-    RingBuffer_t rx;
-    RingBuffer_t tx;
+    RingBuffer rx;
+    RingBuffer tx;
 
 	USART_TypeDef* m_regs;
 };
-
-
-void usart_init();
-
-void usart_blockwrite( const char* str );
-
-
-bool usart_readByte( uint8_t* data );
-
-void usart_checkRead();
-
 
 #endif /* STM32_SRC_USART_H_ */

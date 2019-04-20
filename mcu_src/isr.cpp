@@ -10,15 +10,7 @@
 
 IsrHandlers IsrHandlers::instance;
 
-// Set up all interrupt functions.
-#define MK_IRQ_FKN(handler, FknName) \
-extern "C" void FknName##_IRQHandler(void) \
-{ IsrHandlers::callIsr(IrqHandlers::handler); }
-
-#define MK_SYSIRQ_FKN(handler, FknName) \
-extern "C" void FknName##_Handler(void) \
-{ IsrHandlers::callIsr(IrqHandlers::handler); }
-
+int basePri = 0;
 
 MK_SYSIRQ_FKN(systick, SysTick)
 
