@@ -43,7 +43,7 @@ public:
 private:
 	void setupTimer();
 
-    void sysTickIsr()
+    void inline sysTickIsr()
     {
     	m_sysTick++;
     }
@@ -52,6 +52,7 @@ private:
 
 	TIM_TypeDef* m_dev = nullptr;
 	std::atomic<uint32_t> m_sysTick{0};
+	// volatile uint32_t m_sysTick{0};
 
 	std::atomic<uint16_t> m_cntMsb{0};
 	std::atomic<uint32_t> m_cntMsb2{0};
@@ -74,35 +75,6 @@ void OdoTimer::delay( int ms )
     } while(!done(m_sysTick));
 
 }
-
-class IsrHandlers
-{
-public:
-	using Del = delegate<void()>;
-	enum class Handler
-	{
-		systick,
-		tim2,
-		maxNo
-	};
-
-	static IsrHandlers instance;
-
-	static Del& del( Handler h)
-    {
-		return instance.m_isrCB[ static_cast<int>( h ) ];
-    }
-
-	static void setIsr( Handler h, Del del )
-    {
-        instance.m_isrCB[ static_cast<int>( h ) ]();
-    }
-
-    static void callIsr( Handler h ) { instance.m_isrCB[ static_cast<int>( h ) ](); }
-
-  private:
-	Del m_isrCB[ static_cast<int>(Handler::maxNo) ];
-};
 
 using TimerCB = void ( * )( const TickPoint& tp, void* ctx );
 

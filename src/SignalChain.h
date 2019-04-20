@@ -187,4 +187,13 @@ class MedianFiltering
     }
 };
 
+
+class SlotTracker
+{
+public:
+
+private:
+	std::array<uint32_t, 37> m_slots;
+};
+
 #endif /* SRC_SIGNALCHAIN_H_ */

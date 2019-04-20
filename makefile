@@ -12,7 +12,7 @@ FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-
 STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
 
-MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp
+MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp
 SRC:=$(MCU_SRC:%=mcu_src/%)
 
 #usart.c timer.c drivers.c
@@ -31,23 +31,23 @@ all: main.hex unittest interpreter
 unittest: signalchain_test
 	./signalchain_test
 
-TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp
+TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp
 
 
 interpreter : src/interpreter.cpp src/SignalChain.cpp
 	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp -lfmt
 
-signalchain_test: $(TEST_SRC) src/SignalChain.h
+signalchain_test: $(TEST_SRC) src/SignalChain.h mcu_src/mcuaccess.h
 	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC) -lgtest -lgtest_main
 	arm-none-eabi-objdump -D main.elf > main.dis 
 
 main.elf: $(SRC) makefile src/Strings.h
 	arm-none-eabi-g++ $(DEF) $(INC) $(FLAGS) -Tmcu_src/stm32_flash.ld -o main.elf $(SRC)
-	arm-none-eabi-objdump -S main.elf > main_dump.txt
+	arm-none-eabi-objdump -C -S main.elf > main_dump.txt
 
 main.hex : main.elf
 	arm-none-eabi-objcopy -O ihex main.elf main.hex
-	arm-none-eabi-objdump -D main.elf > main.txt
+	arm-none-eabi-objdump -C -D main.elf > main.txt
 
 upload: main.elf
 	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb

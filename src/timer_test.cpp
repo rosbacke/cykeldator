@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <timer.h>
+#include <isr.h>
 
 
 static int s_delayCnt;
@@ -14,7 +15,7 @@ static int s_delayCnt;
 static void delayTestCB()
 {
 	s_delayCnt++;
-	IsrHandlers::callIsr(IsrHandlers::Handler::systick);
+	IsrHandlers::callIsr(IrqHandlers::systick);
 }
 
 TEST(timer, construction)
@@ -32,10 +33,10 @@ TEST(timer, construction)
 	OdoTimer ot(&timerFake);
 
 	EXPECT_EQ(ot.sysTick(), 0);
-	IsrHandlers::callIsr(IsrHandlers::Handler::systick);
+	IsrHandlers::callIsr(IrqHandlers::systick);
 
 	EXPECT_EQ(ot.sysTick(), 1);
-	IsrHandlers::callIsr(IsrHandlers::Handler::systick);
+	IsrHandlers::callIsr(IrqHandlers::systick);
 
 	EXPECT_EQ(ot.sysTick(), 2);
 

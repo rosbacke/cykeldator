@@ -65,10 +65,12 @@ int main( int argc, const char* argv[] )
             }
         }
         data2.push_back( el );
-        fmt::print( "{} {} {} {} {} {} {} {} {}\n", ( int )el.state,
+        double speed = el.medState == MedianFiltering::State::VALID
+        		? 3.6 * 2.2 / 36 * 1000000.0 / el.res.m_deltaRelease : 0.0;
+        fmt::print( "{}\t{}\t{}\t{}\t{}\t{:>6}\t{:>6} {:>3}\t{}\t{:>7}\n", ( int )el.state,
                     el.res.m_systick, el.res.m_count, el.res.m_deltaAssert,
                     el.res.m_deltaRelease, el.res.m_timeAsserted, el.median,
-                    ( int )el.medState, el.isAirVent );
+                    ( int )el.medState, el.isAirVent, speed );
     }
     fmt::print( "{}\n", argc );
 }
