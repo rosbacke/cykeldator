@@ -23,3 +23,5 @@ extern "C" void FknName##_Handler(void) \
 MK_SYSIRQ_FKN(systick, SysTick)
 
 MK_IRQ_FKN(tim2, TIM2)
+MK_IRQ_FKN(usart1, USART1)
+MK_IRQ_FKN(usart2, USART2)

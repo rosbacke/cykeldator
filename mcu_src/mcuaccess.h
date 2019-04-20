@@ -86,6 +86,7 @@ MCU_ACCESS_PORT(GPIO, GPIOB, gpiob);
 MCU_ACCESS_PORT(GPIO, GPIOC, gpioc);
 MCU_ACCESS_PORT(RCC, RCC, rcc);
 MCU_ACCESS_PORT(I2C, I2C1, i2c1);
+MCU_ACCESS_PORT(USART, USART1, usart1);
 
 
 #undef SysTick
@@ -100,6 +101,8 @@ MCU_ACCESS_PORT(I2C, I2C1, i2c1);
 #define TIM2 ::hwports::tim2
 #undef I2C1
 #define I2C1 ::hwports::i2c1
+#undef USART1
+#define USART1 ::hwports::usart1
 
 
 // Note: RCC is used before main is called in clock setup etc.

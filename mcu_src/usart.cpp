@@ -8,17 +8,10 @@
 #include "usart.h"
 
 #include "mcuaccess.h"
+#include "isr.h"
 
 #include <stdbool.h>
 
-#define BUF_SIZE 200
-
-typedef struct RingBuffer
-{
-    uint8_t buffer[ BUF_SIZE ];
-    int readIndex;
-    int writeIndex;
-} RingBuffer_t;
 
 bool rbEmpty( RingBuffer_t* rb ) { return rb->readIndex == rb->writeIndex; }
 
@@ -37,7 +30,7 @@ bool rbRead( RingBuffer_t* rb, uint8_t* b )
     return true;
 }
 
-bool rbWrite( RingBuffer_t* rb, uint8_t b )
+bool Usart::rbWrite( RingBuffer_t* rb, uint8_t b )
 {
     int next = rb->writeIndex;
     advance( &next );
@@ -48,6 +41,7 @@ bool rbWrite( RingBuffer_t* rb, uint8_t b )
     return true;
 }
 
+#if 0
 struct UsartDriver
 {
     USART_TypeDef* regs;
@@ -55,13 +49,14 @@ struct UsartDriver
     RingBuffer_t rx;
     RingBuffer_t tx;
 };
+#endif
 
-static struct UsartDriver s_usart;
+static struct Usart s_usart(hwports::usart1.addr());
 
-
-static void isr( struct UsartDriver* ud )
+void Usart::isr()
 {
-    USART_TypeDef* regs = ud->regs;
+	struct Usart* ud = this;
+    USART_TypeDef* regs = m_regs;
     uint16_t sr = regs->SR;
     if ( sr & USART_SR_RXNE )
     {
@@ -83,37 +78,14 @@ static void isr( struct UsartDriver* ud )
     }
 }
 
-bool usart_readByte( uint8_t* data ) { return rbRead( &s_usart.rx, data ); }
+bool Usart::usart_readByte( uint8_t* data ) { return rbRead( &s_usart.rx, data ); }
 
 void usart_init()
 {
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
-
-    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-
-    RCC->APB2RSTR |= RCC_APB2RSTR_USART1RST;
-    RCC->APB2RSTR &= ~RCC_APB2RSTR_USART1RST;
-
-    // Pull up.
-    GPIOA->ODR |= 0x200;
-    USART1->CR1 |= USART_CR1_UE;
-    USART1->BRR = 625;  // Should be 115200 baud.
-
-    // TX: PA9, RX: PA10
-    // GPIO mode alternate function.
-    uint32_t t;
-    t = GPIOA->CRH;
-    t &= ~( 0xffu << 4 );
-    t |= ( 0xa << 4 ) | ( 0x8 << 8 );
-    GPIOA->CRH = t;
-
-    NVIC_SetPriority( USART1_IRQn, ( 1 << __NVIC_PRIO_BITS ) - 1 );
-    NVIC_EnableIRQ( USART1_IRQn );
-
-    USART1->CR1 |= USART_CR1_RE | USART_CR1_TE;
+	Usart::setupUsart1(s_usart);
 }
 
-void usart_checkRead()
+void Usart::usart_checkRead()
 {
     if ( USART1->SR & USART_SR_RXNE )
     {
@@ -133,4 +105,40 @@ void usart_blockwrite( const char* str )
         ;
 }
 
-void USART1_IrqHandler( void ) { isr( &s_usart ); }
+
+Usart::Usart(USART_TypeDef* regs)
+{
+	m_regs = regs;
+}
+
+void Usart::setupUsart1(Usart& usart)
+{
+	using hwports::rcc;
+	using hwports::gpioa;
+	using hwports::usart1;
+
+	IsrHandlers::del(IrqHandlers::usart1).set<Usart, &Usart::isr>(usart);
+
+	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN |  RCC_APB2ENR_USART1EN;
+
+	rcc->APB2RSTR |= RCC_APB2RSTR_USART1RST;
+	rcc->APB2RSTR &= ~RCC_APB2RSTR_USART1RST;
+
+    // Pull up.
+	gpioa->ODR |= 0x200;
+    usart1->CR1 |= USART_CR1_UE;
+    usart1->BRR = 625;  // Should be 115200 baud.
+
+    // TX: PA9, RX: PA10
+    // GPIO mode alternate function.
+    uint32_t t;
+    t = gpioa->CRH;
+    t &= ~( 0xffu << 4 );
+    t |= ( 0xa << 4 ) | ( 0x8 << 8 );
+    gpioa->CRH = t;
+
+    IrqSource_Usart1::setup();
+    IrqSource_Usart1::active(true);
+
+    usart1->CR1 |= USART_CR1_RE | USART_CR1_TE;
+}
