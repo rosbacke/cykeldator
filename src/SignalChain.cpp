@@ -6,7 +6,6 @@
  */
 
 #include "SignalChain.h"
-// #include <delegate/delegate.hpp>
 
 // Working point: 10km/h -> ~3m/s. Spokes at ~6cm distance -> pulse freq ~3/0.06
 // ~50Hz, 20ms. Aim for 10Hz update frequency. Should work down to 2km/h.
@@ -48,7 +47,7 @@ RawSignalConditioning::addTickPoint(const TickPoint& tp)
     m_lastTPSystick = m_cachedSystick;
     switch (m_state)
     {
-    case State::NO_DATA:
+    case State::INVALID:
         m_cachedTP = tp;
         m_state = State::WAIT_NEXT;
         break;
@@ -56,7 +55,7 @@ RawSignalConditioning::addTickPoint(const TickPoint& tp)
     case State::VALID:
         if (tp.m_count != m_cachedTP.m_count + 1)
         {
-            m_state = State::NO_DATA;
+            m_state = State::INVALID;
             break;
         }
         m_result.m_count = tp.m_count;
@@ -78,11 +77,11 @@ void
 RawSignalConditioning::addSystick(uint32_t tick)
 {
     m_cachedSystick = tick;
-    if (m_state != State::NO_DATA)
+    if (m_state != State::INVALID)
     {
         if (int32_t(tick - m_lastTPSystick) >= MAX_TP_AGE_MS)
         {
-            m_state = State::NO_DATA;
+            m_state = State::INVALID;
         }
     }
 }

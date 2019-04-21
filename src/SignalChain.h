@@ -14,6 +14,14 @@
 #include <array>
 #include <delegate/delegate.hpp>
 
+enum class State
+{
+	INVALID,
+	VALID,
+    WAIT_NEXT, // Got one measurement, recent enough to be usable.
+    NO_DATA,   // Initial state. No acceptable measurement available.
+};
+
 class SignalChain
 {
   public:
@@ -45,20 +53,13 @@ class RawSignalConditioning
 {
   public:
     RawSignalConditioning() = default;
-    enum class State
-    {
-        NO_DATA,   // Initial state. No acceptable measurement available.
-        WAIT_NEXT, // Got one measurement, recent enough to be usable.
-        VALID      // Last 2 measurements were usable and delta values can be
-                   // calculated.
-    };
     static const constexpr uint32_t MAX_TP_AGE_MS =
         10000; // Arbitrary guess, 10sec.
 
     void addTickPoint(const TickPoint& tp);
     void addSystick(uint32_t tick);
 
-    State m_state = State::NO_DATA;
+    State m_state = State::INVALID;
     TickPoint m_cachedTP;
     uint32_t m_lastTPSystick = 0;
 
