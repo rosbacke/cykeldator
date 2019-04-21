@@ -16,6 +16,7 @@ enum class IrqHandlers
     tim2,
     usart1,
     usart2,
+    thread, // For use in 'cover'
     maxNo
 };
 
@@ -35,14 +36,12 @@ MAP_DATA(tim2, TIM2_IRQn);
 MAP_DATA(usart1, USART1_IRQn);
 
 template <int cortexPri>
-inline int
-replacePrio();
-void
-setPrio(int cortexPrio);
+inline int replacePrio();
+
+void setPrio(int cortexPrio);
 
 template <int irqLevel>
-constexpr int
-irq2CortexLevel()
+constexpr int irq2CortexLevel()
 {
     return irqLevel == 0
                ? 0
@@ -83,77 +82,68 @@ class InterruptSource
     static void setup();
 };
 
+using IrqSource_Thread = InterruptSource<IrqHandlers::thread, 0>;
+
 // Set priority using compile time selection.
 template <IRQn_Type IRQn, int priority>
-void
-setIsrPriority();
+void setIsrPriority();
 
 // Enable interrupt using compile time selection.
 template <IRQn_Type IRQn>
-void
-enableIrq();
+void enableIrq();
 
 // Disable interrupt using compile time selection.
 template <IRQn_Type IRQn>
-void
-disableIrq();
+void disableIrq();
 
 #ifdef UNIT_TEST
 
 template <IRQn_Type IRQn, int prio>
-inline void
-setIsrPriority()
+inline void setIsrPriority()
 {
 }
 
 template <IRQn_Type IRQn>
-inline void
-enableIrq()
+inline void enableIrq()
 {
 }
 
 template <IRQn_Type IRQn>
-inline void
-disableIrq()
+inline void disableIrq()
 {
 }
 
 extern int basePri;
 
 template <int newPri>
-inline int
-replacePrio()
+inline int replacePrio()
 {
     int t = basePri;
     basePri = newPri;
     return t;
 }
 
-inline void
-setPrio(int newPrio)
+inline void setPrio(int newPrio)
 {
     basePri = newPrio;
 }
 
 #else
 
-static inline uint32_t
-get_BASEPRI(void)
+static inline uint32_t get_BASEPRI(void)
 {
     uint32_t result = 0;
     __ASM volatile("MRS %0, basepri_max" : "=&r"(result));
     return (result);
 }
 
-static inline void
-set_BASEPRI(uint32_t value)
+static inline void set_BASEPRI(uint32_t value)
 {
     __ASM volatile("MSR basepri, %0" : : "r"(value));
 }
 
 template <IRQn_Type IRQn, int priority>
-inline void
-setIsrPriority()
+inline void setIsrPriority()
 {
     // Long story: Cortex-M register  values are in range 0 - 0xff where 0x0 is
     // highest priority. Device vendors can chose to implement a subset given by
@@ -166,46 +156,40 @@ setIsrPriority()
 }
 
 template <IRQn_Type IRQn>
-inline void
-enableIrq()
+inline void enableIrq()
 {
     static_assert(IRQn >= 0, "");
     NVIC_EnableIRQ(IRQn);
 }
 
 template <>
-inline void
-enableIrq<SysTick_IRQn>()
+inline void enableIrq<SysTick_IRQn>()
 {
     ::hwports::systick->CTRL |= SysTick_CTRL_TICKINT_Msk;
 }
 
 template <IRQn_Type IRQn>
-inline void
-disableIrq()
+inline void disableIrq()
 {
     static_assert(IRQn >= 0, "");
     NVIC_DisableIRQ(IRQn);
 }
 
 template <int cortexPrio>
-inline int
-replacePrio()
+inline int replacePrio()
 {
     int t = get_BASEPRI();
     set_BASEPRI(cortexPrio);
     return t;
 }
 
-inline void
-setPrio(int cortexPrio)
+inline void setPrio(int cortexPrio)
 {
     set_BASEPRI(cortexPrio);
 }
 
 template <>
-inline void
-disableIrq<SysTick_IRQn>()
+inline void disableIrq<SysTick_IRQn>()
 {
     ::hwports::systick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
 }
@@ -213,8 +197,7 @@ disableIrq<SysTick_IRQn>()
 
 // Enable/disable interrupt at NVIQ level.
 template <IrqHandlers handler, int priority>
-void
-InterruptSource<handler, priority>::active(bool state)
+void InterruptSource<handler, priority>::active(bool state)
 {
     const constexpr IRQn_Type irqNo = IrqMap<handler>::cmsisIrq;
 
@@ -226,8 +209,7 @@ InterruptSource<handler, priority>::active(bool state)
 
 // Setup priority.
 template <IrqHandlers handler, int priority>
-void
-InterruptSource<handler, priority>::setup()
+void InterruptSource<handler, priority>::setup()
 {
     const constexpr IRQn_Type irqNo = IrqMap<handler>::cmsisIrq;
     setIsrPriority<irqNo, priority>();

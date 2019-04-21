@@ -48,8 +48,7 @@ OdoTimer::OdoTimer(TIM_TypeDef* device) : m_dev(device)
  * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
  * CCR3 to detect positive flank and CCR4 for negative flank.
  */
-void
-OdoTimer::setupTimer()
+void OdoTimer::setupTimer()
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
@@ -107,8 +106,7 @@ OdoTimer::setupTimer()
  * - CC taken (low value)
  * -> No update of CCR.
  */
-void
-OdoTimer::tim2Isr()
+void OdoTimer::tim2Isr()
 {
     uint16_t srMask = 0;
     uint16_t sr = m_dev->SR;

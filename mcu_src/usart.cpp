@@ -12,32 +12,9 @@
 
 #include <stdbool.h>
 
-bool
-RingBuffer::read(uint8_t* b)
-{
-    if (empty())
-        return false;
-    *b = buffer[readIndex];
-    advance(&readIndex);
-    return true;
-}
-
-bool
-RingBuffer::write(uint8_t b)
-{
-    int next = writeIndex;
-    advance(&next);
-    if (next == readIndex)
-        return false;
-    buffer[writeIndex] = b;
-    writeIndex = next;
-    return true;
-}
-
 void
 Usart::isr()
 {
-    struct Usart* ud = this;
     USART_TypeDef* regs = m_regs;
     uint16_t sr = regs->SR;
     if (sr & USART_SR_RXNE)
@@ -75,16 +52,14 @@ Usart::checkRead()
     }
 }
 
+
 void
 Usart::blockwrite(const char* str)
 {
-    // IrqSource_Usart1::Protect p;
-
-    __disable_irq();
+	Cover<UsartCover, IrqHandlers::thread> cover;
     while (*str)
         tx.write(*str++);
     m_regs->CR1 |= USART_CR1_TXEIE;
-    __enable_irq();
 }
 
 Usart::Usart(USART_TypeDef* regs) : m_regs(regs) {}

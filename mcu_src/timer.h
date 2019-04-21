@@ -46,7 +46,7 @@ class OdoTimer
         return m_tp;
     }
     using ShRes = SharedResource<
-        IrqList<IrqHandlers::systick, IrqHandlers::tim2, IrqHandlers::maxNo>>;
+        IrqList<IrqHandlers::systick, IrqHandlers::tim2, IrqHandlers::thread>>;
 
   private:
     void setupTimer();
@@ -73,15 +73,12 @@ class OdoTimer
 };
 
 template <OdoTimer::SleepCB cb>
-void
-OdoTimer::delay(int ms)
+void OdoTimer::delay(int ms)
 {
-    const uint32_t base = [&]() { /*Cover<ShRes> c;*/
-                                  return m_sysTick.load();
-    }();
-    auto done = [&]() { /* Cover<ShRes> c;*/
-                        auto cnt = m_sysTick.load();
-                        return int32_t(cnt - base) >= ms;
+    const uint32_t base = m_sysTick.load();
+    auto done = [&]() {
+        auto cnt = m_sysTick.load();
+        return int32_t(cnt - base) >= ms;
     };
     while (!done())
     {
@@ -89,7 +86,5 @@ OdoTimer::delay(int ms)
             cb();
     }
 }
-
-using TimerCB = void (*)(const TickPoint& tp, void* ctx);
 
 #endif /* STM32_SRC_TIMER_H_ */

@@ -32,7 +32,7 @@ class IrqList<handler>
     static const constexpr int maxPri = InterruptSource<handler>::priority;
     constexpr static bool inSet(IrqHandlers queryVal)
     {
-        return queryVal == handler;
+        return queryVal == handler || queryVal == IrqHandlers::maxNo;
     }
 };
 
@@ -56,16 +56,32 @@ template <typename SharedResource,
 class Cover
 {
   public:
-    static const constexpr bool sameLevel =
-        SharedResource::protectPri == InterruptSource<callingHandler>::priority;
+    static const constexpr int callLevel =
+        InterruptSource<callingHandler>::priority;
+    static const constexpr int protectLevel = SharedResource::protectPri;
+    static const constexpr bool sameLevel = callLevel == protectLevel;
+
     Cover()
     {
-        static_assert(SharedResource::inSet(callingHandler), "");
+        // Default value will att a runtime check that we are really
+        // in thread mode.
+        if (callingHandler == IrqHandlers::maxNo)
+        {
+            uint32_t result = 0;
+            __ASM volatile("MRS %0, basepri_max" : "=&r"(result));
+            if (result != 0)
+            {
+                while (1)
+                    ;
+            }
+        }
+        else
+        {
+            static_assert(SharedResource::inSet(callingHandler), "");
+        }
         if (!sameLevel)
         {
-            const int protectPri = SharedResource::protectPri;
-            const int cortexPri = irq2CortexLevel<protectPri>();
-            setPrio(cortexPri);
+            setPrio(irq2CortexLevel<protectLevel>());
         }
         asm volatile("" : : : "memory");
     }
@@ -74,13 +90,12 @@ class Cover
         asm volatile("" : : : "memory");
         if (!sameLevel)
         {
-            const int irqPri = InterruptSource<callingHandler>::priority;
-            const int cortexPri = irq2CortexLevel<irqPri>();
-            setPrio(cortexPri);
+            setPrio(irq2CortexLevel<callLevel>());
         }
     }
 };
 
+#if 0
 template <typename Data, typename SharedResource>
 class SharedData
 {
@@ -100,5 +115,6 @@ class SharedData
   private:
     Data m_data;
 };
+#endif
 
 #endif /* MCU_SRC_COVER_H_ */
