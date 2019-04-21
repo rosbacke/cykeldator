@@ -46,7 +46,6 @@ extern "C"
      * @}
      */
 
-
     /** @addtogroup STM32F10x_System_Exported_types
      * @{
      */
@@ -77,8 +76,8 @@ extern "C"
      * @{
      */
 
-    extern void SystemInit( void );
-    extern void SystemCoreClockUpdate( void );
+    extern void SystemInit(void);
+    extern void SystemCoreClockUpdate(void);
     /**
      * @}
      */

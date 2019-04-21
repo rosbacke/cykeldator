@@ -6,4 +6,3 @@
  */
 
 #include "TickPoint.h"
-

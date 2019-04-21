@@ -12,12 +12,12 @@
 
 class I2c
 {
-public:
-	I2c(I2C_TypeDef* i2c) : m_dev(i2c) {}
-	void init();
-private:
-	I2C_TypeDef* m_dev;
-};
+  public:
+    I2c(I2C_TypeDef* i2c) : m_dev(i2c) {}
+    void init();
 
+  private:
+    I2C_TypeDef* m_dev;
+};
 
 #endif /* MCU_SRC_I2C_H_ */

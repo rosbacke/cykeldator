@@ -1,21 +1,23 @@
 #include "timer.h"
 
-#include "mcuaccess.h"
 #include "isr_project.h"
+#include "mcuaccess.h"
 
 #include "usart.h"
 
 #include <delegate/delegate.hpp>
 
-#include <stdint.h>
 #include <atomic>
+#include <stdint.h>
 
+#include <cover.h>
 
-OdoTimer::OdoTimer( TIM_TypeDef* device )
-: m_dev( device )
+OdoTimer::OdoTimer(TIM_TypeDef* device) : m_dev(device)
 {
-	IsrHandlers::del(IrqHandlers::systick).set<OdoTimer, &OdoTimer::sysTickIsr>(*this);
-	IsrHandlers::del(IrqHandlers::tim2).set<OdoTimer, &OdoTimer::tim2Isr>(*this);
+    IsrHandlers::del(IrqHandlers::systick)
+        .set<OdoTimer, &OdoTimer::sysTickIsr>(*this);
+    IsrHandlers::del(IrqHandlers::tim2)
+        .set<OdoTimer, &OdoTimer::tim2Isr>(*this);
     setupTimer();
 }
 
@@ -40,14 +42,14 @@ OdoTimer::OdoTimer( TIM_TypeDef* device )
 #undef RCC
 #define RCC hwports::rcc
 
-
 // Input PA2, Tim2, Channel 3.
 
 /**
  * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
  * CCR3 to detect positive flank and CCR4 for negative flank.
  */
-void OdoTimer::setupTimer()
+void
+OdoTimer::setupTimer()
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
@@ -72,10 +74,10 @@ void OdoTimer::setupTimer()
     // Enable capture on CC3 / CC4. CC4 neg flank.
     m_dev->CCER |= TIM_CCER_CC3E | TIM_CCER_CC4E | TIM_CCER_CC4P;
 
-    m_dev->DIER |= TIM_DIER_UIE | TIM_DIER_CC3IE | TIM_DIER_CC4IE;
-
     // Add 8:8 filtering. Still < 1us resolution so shoud be ok.
     m_dev->CCMR2 |= TIM_CCMR2_IC3F_0 * 9 + TIM_CCMR2_IC4F_0 * 9;
+
+    m_dev->DIER |= TIM_DIER_UIE | TIM_DIER_CC3IE | TIM_DIER_CC4IE;
 }
 
 /* Case 1:
@@ -105,47 +107,52 @@ void OdoTimer::setupTimer()
  * - CC taken (low value)
  * -> No update of CCR.
  */
-void OdoTimer::tim2Isr()
+void
+OdoTimer::tim2Isr()
 {
     uint16_t srMask = 0;
     uint16_t sr = m_dev->SR;
     uint16_t cnt = m_dev->CNT;
+    uint16_t capture3 = m_dev->CCR3;
+    uint16_t capture4 = m_dev->CCR4;
+    const bool cntUpdate = sr & TIM_SR_UIF;
+
     uint16_t cntMsb_ = m_cntMsb;
 
     bool send = false;
-    const bool cntUpdate = sr & TIM_SR_UIF;
-    if ( cntUpdate )
+    if (cntUpdate)
     {
         cntMsb_++;
-        if ( cntMsb_ == 0 )
+        if (cntMsb_ == 0)
             m_cntMsb2++;
 
         srMask |= TIM_SR_UIF;
     }
-    if ( sr & TIM_SR_CC3IF )
+    if (sr & TIM_SR_CC3IF)
     {
-        uint16_t capture = m_dev->CCR3;
-        uint32_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
+        uint32_t msb = (capture3 > 0xc000 && cnt < 0x3fff && cntUpdate)
                            ? uint32_t(cntMsb_) - 1u
                            : uint32_t(cntMsb_);
-        m_posEdgeTS = capture | ( msb << 16u );
+        m_posEdgeTS = capture3 | (msb << 16u);
         m_count++;
-        m_tp = TickPoint(m_count, m_posEdgeTS, m_negEdgeTS);
         send = true;
         srMask |= TIM_SR_CC3IF;
     }
-    if ( sr & TIM_SR_CC4IF )
+    if (sr & TIM_SR_CC4IF)
     {
-        uint16_t capture = m_dev->CCR4;
-        uint32_t msb = ( capture > 0xc000 && cnt < 0x3fff && cntUpdate )
+        uint32_t msb = (capture4 > 0xc000 && cnt < 0x3fff && cntUpdate)
                            ? uint32_t(cntMsb_) - 1u
                            : uint32_t(cntMsb_);
-        m_negEdgeTS = capture | ( msb << 16u );
+        m_negEdgeTS = capture4 | (msb << 16u);
         srMask |= TIM_SR_CC4IF;
     }
     m_cntMsb = cntMsb_;
-    m_dev->SR &= ~( uint32_t )srMask;
-
-    if ( send && pulseCB)
-    	pulseCB();
+    m_dev->SR &= ~(uint32_t)srMask;
+    if (send)
+    {
+        Cover<ShRes, IrqHandlers::tim2> c;
+        m_tp = TickPoint(m_count, m_posEdgeTS, m_negEdgeTS);
+    }
+    if (send && pulseCB)
+        pulseCB();
 }

@@ -17,7 +17,6 @@ MCU_ACCESS_PORT_DEF(RCC, RCC, rcc);
 MCU_ACCESS_PORT_DEF(I2C, I2C1, i2c1);
 MCU_ACCESS_PORT_DEF(USART, USART1, usart1);
 
-
 #ifdef UNIT_TEST
 
 SysTick_Type systickFake;
@@ -29,4 +28,4 @@ HwPort<SysTick_Type, SysTick_BASE, nullptr> systick;
 
 #endif
 
-}
+} // namespace hwports

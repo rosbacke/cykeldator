@@ -33,13 +33,20 @@ SignalChain::SignalChain() {}
 
 SignalChain::~SignalChain() {}
 
-void SignalChain::newTickPoint( const TickPoint& tp ) {}
-void SignalChain::newSysTick( uint32_t sysTick ) {}
+void
+SignalChain::newTickPoint(const TickPoint& tp)
+{
+}
+void
+SignalChain::newSysTick(uint32_t sysTick)
+{
+}
 
-void RawSignalConditioning::addTickPoint( const TickPoint& tp )
+void
+RawSignalConditioning::addTickPoint(const TickPoint& tp)
 {
     m_lastTPSystick = m_cachedSystick;
-    switch ( m_state )
+    switch (m_state)
     {
     case State::NO_DATA:
         m_cachedTP = tp;
@@ -47,32 +54,33 @@ void RawSignalConditioning::addTickPoint( const TickPoint& tp )
         break;
     case State::WAIT_NEXT:
     case State::VALID:
-        if ( tp.m_count != m_cachedTP.m_count + 1 )
+        if (tp.m_count != m_cachedTP.m_count + 1)
         {
             m_state = State::NO_DATA;
             break;
         }
         m_result.m_count = tp.m_count;
         m_result.m_deltaAssert =
-            ( tp.m_failingEdge - m_cachedTP.m_failingEdge ) / 72;
+            (tp.m_failingEdge - m_cachedTP.m_failingEdge) / 72;
         m_result.m_deltaRelease =
-            ( tp.m_raisingEdge - m_cachedTP.m_raisingEdge ) / 72;
-        m_result.m_timeAsserted = ( tp.m_raisingEdge - tp.m_failingEdge ) / 72;
+            (tp.m_raisingEdge - m_cachedTP.m_raisingEdge) / 72;
+        m_result.m_timeAsserted = (tp.m_raisingEdge - tp.m_failingEdge) / 72;
         m_result.m_systick = m_cachedSystick;
         m_state = State::VALID;
-        if ( m_update )
-            m_update( *this );
+        if (m_update)
+            m_update(*this);
         m_cachedTP = tp;
         break;
     }
 }
 
-void RawSignalConditioning::addSystick( uint32_t tick )
+void
+RawSignalConditioning::addSystick(uint32_t tick)
 {
     m_cachedSystick = tick;
-    if ( m_state != State::NO_DATA )
+    if (m_state != State::NO_DATA)
     {
-        if ( int32_t( tick - m_lastTPSystick ) >= MAX_TP_AGE_MS )
+        if (int32_t(tick - m_lastTPSystick) >= MAX_TP_AGE_MS)
         {
             m_state = State::NO_DATA;
         }

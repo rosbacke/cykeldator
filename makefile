@@ -6,7 +6,7 @@ CXXFLAGS += -mthumb -mcpu=cortex-m3
 
 SPEC:=-specs=nosys.specs
 
-FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions -fno-rtti
+FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections
 
 HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h 
 
@@ -14,7 +14,8 @@ STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
 
 MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp
-SRC:=$(MCU_SRC:%=mcu_src/%)
+SRC:=$(MCU_SRC:%=mcu_src/%) 
+#$(CMSIS_D)/CoreSupport/core_cm3.c
 
 #usart.c timer.c drivers.c
 DEF=-DSTM32F10X_MD=1
