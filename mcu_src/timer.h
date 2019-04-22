@@ -80,11 +80,10 @@ void OdoTimer::delay(int ms)
         auto cnt = m_sysTick.load();
         return int32_t(cnt - base) >= ms;
     };
-    while (!done())
-    {
+    do {
         if (cb)
             cb();
-    }
+    } while(!done());
 }
 
 #endif /* STM32_SRC_TIMER_H_ */

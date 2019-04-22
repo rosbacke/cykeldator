@@ -8,12 +8,12 @@ SPEC:=-specs=nosys.specs
 
 FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections
 
-HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h 
+HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h mcu_src/App.h
 
 STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
 
-MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp
+MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp App.cpp
 SRC:=$(MCU_SRC:%=mcu_src/%) 
 #$(CMSIS_D)/CoreSupport/core_cm3.c
 
@@ -27,7 +27,7 @@ INC+=-I.
 INC+=-I../delegate/include
 INC+=-Idisplay/u8g2/csrc -Idisplay -Idisplay/u8g2/cppsrc
 
-FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-section -fdata-section
+FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-sections -fdata-sections
 
 all: main.hex unittest interpreter
 
@@ -52,9 +52,9 @@ main.hex : main.elf
 	arm-none-eabi-objcopy -O ihex main.elf main.hex
 	arm-none-eabi-objdump -C -D main.elf > main.txt
 
+#echo 'file main.elf' >> upload.gdb
 upload: main.elf
 	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
-	#echo 'file main.elf' >> upload.gdb
 	@echo 'monitor halt'
 	@echo 'monitor reset halt'
 	@echo 'load' >> upload.gdb
@@ -72,8 +72,7 @@ debug: main.elf
 start_openocd:
 	sudo openocd  -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg
 
-display.a:
-	
+
 # Require Boot0 set to '1' and an manual reset before upload.
 uploadserial: main.hex
 	stm32flash /dev/ttyACM1 -w main.hex
