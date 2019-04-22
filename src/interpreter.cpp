@@ -27,7 +27,7 @@ main(int argc, const char* argv[])
 
     struct El1
     {
-        RawSignalConditioning::State state;
+        State state;
         RawSignalConditioning::Result res;
         MedianFiltering::State medState;
         uint32_t median;
@@ -54,7 +54,7 @@ main(int argc, const char* argv[])
         el.medState = MedianFiltering::State::INVALID;
         el.median = 0;
         el.isAirVent = false;
-        if (el.state == RawSignalConditioning::State::VALID)
+        if (el.state == State::VALID)
         {
             medianCond.addDelta(el.res.m_deltaRelease, el.res.m_count);
             if (medianCond.m_state == MedianFiltering::State::VALID)

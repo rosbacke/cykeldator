@@ -1,0 +1,145 @@
+# Signal processing
+
+Purpose: Describe the signal processing chain.
+
+## Inputs
+We have 2 sources of signal input:
+1: Systick counter indicating passing of time with ms resolution. One interrupt call / ms. 
+2: Pulses (with timestamps) when the spokes pass the IR sensor. One IRQ call for each spoke.
+
+### Systick:
+Delivered as an uint32_t counter value. overflow after about 49 days. (Disregard)
+Signal name: systick(x) : For some x, retun the counter value of systick.
+
+### Pulses:
+A GPIO pin connected to the hardware counter. The counter counts at 72MHz. 
+The pulse driver extent the counter value to 32 bit and will overflow after 55 seconds.
+At rest the GPIO signal reads as a '1'. When covered by a spoke (or air valve) it reads as a '0'.
+
+The timer uses 2 capture registers to collect the falling and rising flank of the signal. This
+is sampled in hardware and should be cycle exact in theory. In practice there is an 8 cycle delay (~0.1us)
+due to hardware based filtering.
+The interrupt driver captures a falling edge and then a raising edge. It extends them to 32 bits
+and triggers a Timepoint readout with the raising edge. This includes the systick count to ease
+merging the 2 datastreams.
+
+### Count:
+With every reported pulse, there is a count value associated. This increase with one for each reported count.
+
+
+## Notation:
+View our measurements as a discrete signal stream, indexed primarily by the count.
+e.g.: systick(x) usually means the systick value from the pulse reading with count x.
+Do note the pulse train varies in time in contrast to standard signal processing.
+
+## Signal processing steps.
+The processing chain contain a number of 'modules' or processing steps that gradually
+refine the signal into desired outputs. These are primarily accurate speed data and
+distance travelled with good time stamps at regular intervals.
+Each step also present status information to inform about when the calculated value 
+can be relied upon.
+
+### Raw signal conditioning. (rawcond)
+
+Will calculate delta from previous pulse. It uses the systick count/interrupt 
+to detect when the stored data is to old and will invalidate stored data if it becomes to old.
+It will handle the rollover of the timer capture registers.
+Of the outputs, the 'raisingEdge' is used as the reference pointe between 2 delta periods.
+states:
+ - invalid : No valid data have recently been received.
+ - got_data: Have one valid pulse but output is still invalid.
+ - valid: Got 2 pulses in recent time. The output is valid.
+
+Output: 
+- Status : invalid, got_data, valid.
+- A struct with the delta times:
+  - count : The count value of the last processed sample.
+  - deltaRising : delta time in microseconds between last 2 rising edges.
+  - deltaFalling : delta time in microseconds between last 2 falling edges.
+  - deltaAssert : delta time in microseconds for period when sensor was covered.
+  - systick : Systick deliveded with the last pulse.
+
+### Median filtering (median)
+
+Calculates a rough estimate of the current common time period between 2 spokes.
+The air valve will induce 2 periods of about half the time and the median filter
+can remove this. Also occational missed spokes can also be filtered away.
+The filter wait until rawcond start to deliver data. Then it fills an internal buffer
+of 7 slots with delta values. Once all 7 slots are filled a median value is produced
+for each new pulse.
+The median is calculated using the 'deltaRaising' value. 
+States:
+- invalid : Whenever we do not have enough data. Any gap of valid data from rawcond will
+  flush the median filter.
+- valid : Once 7 consecutive datapoints have been received the median filter starts
+  to produce a median point.
+  
+Output:
+- Status : invalid, valid.
+- A deltaTime struct identical to input, chosen as the median value from the ringbuffer.
+
+### Air Valve detection (airvalve)
+
+Compares the last Deltaslots periods with the current median value period. If they sum up 
+to approcimately the median value, a boolean true is given for this sample.
+It indicates that the air valve is between the last and the previous period. 
+This module is only active when both the median and rawcond gives valid data.
+
+States:
+- Invalid: input data invalid or not enough samples.
+- Valid: Have valid input and the out put is valid. 
+
+Output:
+- bool: true when an airvent is detected. False for normal spokes.
+- state : invalid, valid.
+
+### Spoke accumulator
+
+The Spoke accumulator keep a number of 'buckets' with data. One for each
+individual spoke and air valve period of the wheel. For a 36 spoke wheel, we have
+37 buckets. Intended to gather statistics about the average angle over the wheel
+for each spoke. Once this data is available, the system can calculate distance
+and velocity with high accuracy for each spoke.
+It require a valid air-valve detector. Once a air valve is detected it places
+delta values in temporary 'buckets'. Once all buckets are filled _and_ an 
+airvent is detected at the right place the temporary buckets are commited
+to permanent ring. If the air-vent is mis-aligned or the sources become invalid
+the temporary ring is cleared and restarted.
+
+The permanent ring should represent something linear to the actual wheel angle
+for each spoke, rather than time as given by the pulses. So for each commit event,
+check that the time between the start and end of the period do not differ to much.
+Then we sum to the total time over the entire wheel and store the time fraction
+for the individual spokes. This should appoximate the angle between each spoke.
+We are still in interger land. Assume the wheen span 16 bits (65536 parts) and the
+neasurements are part of that.
+
+Commiting values to the permanent ring applies exponential filtering. Initially
+with low level but once we have data there each sample should only contribute about
+5-10%.
+
+States:
+- Invalid: Missing input data. Unknown index of the wheel spoke.
+- Collecting: Got valid input and detected air-valve. Filling temporary buffer
+  and committing as needed.
+- Valid: Got enough data in the permanent buffer. Output is valid:
+
+Output:
+state : invalid, collecting, valid.
+spoke index : Index of the last period measured. Period 0 is the one where vir-valve is true.
+
+### Angle2distance
+
+Module accept checks the validity of the Spoke accumulator and the median filter.
+It selects an input source and then calculates best guess of the travelled distance
+in 0.1mm steps from available sources.
+- If no info is available, present a distance of wheel circumference / spokes. This 
+  will fail on air valve.
+- If median and air valve detection, compensate for air valve. Use circ / spokes.
+- If spoke acc. is valid, use that to calculate actual distance.
+
+
+It requires a valid median filter
+
+
+

@@ -32,13 +32,12 @@ TEST(Buildtest, initial)
 TEST(RawSignalConditioning, construction)
 {
     RawSignalConditioning rsc;
-    using State = RawSignalConditioning::State;
 
-    ASSERT_EQ(rsc.m_state, State::NO_DATA);
+    ASSERT_EQ(rsc.m_state, State::INVALID);
     ASSERT_EQ(rsc.m_cachedSystick, 0);
 
     rsc.addSystick(10);
-    ASSERT_EQ(rsc.m_state, State::NO_DATA);
+    ASSERT_EQ(rsc.m_state, State::INVALID);
     ASSERT_EQ(rsc.m_cachedSystick, 10);
 
     sendTP(rsc, 1, 10, 200);

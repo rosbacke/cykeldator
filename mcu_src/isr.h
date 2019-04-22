@@ -52,6 +52,7 @@ constexpr int irq2CortexLevel()
  *  @param handler An enim value inicating which interrupt to handle.
  *  @param Priority  A priority level for the interrupt. 0 is thread prioriy,
  *         higher numerical value mean priority over lower values.
+ *         Default 1 is lowest interrupt priority.
  */
 template <IrqHandlers handler, int pri_ = 1>
 class InterruptSource

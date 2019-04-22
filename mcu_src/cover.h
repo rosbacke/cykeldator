@@ -37,13 +37,20 @@ class IrqList<handler>
     }
 };
 
-// Represent a set of data shared by a set of interrupts and threads.
+// Represent a set of data shared by a set of interrupts and threads and
+// share the same locking strategy.
+// @param IrqList_ A list of all the interrupts and threads that will
+//                 access this resource.
 template <typename IrqList_>
 class SharedResource
 {
   public:
     using IrqList = IrqList_;
+
+    // Priority level to raise the irq level to during critical sections.
     static const constexpr int protectPri = IrqList::maxPri;
+
+    // Return true if a particular thread/irq is part of of the given static set.
     constexpr static bool inSet(IrqHandlers queryVal)
     {
         return IrqList::inSet(queryVal);
