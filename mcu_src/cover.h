@@ -83,11 +83,11 @@ class Cover
         {
             setPrio(irq2CortexLevel<protectLevel>());
         }
-        asm volatile("" : : : "memory");
+        std::atomic_signal_fence( std::memory_order_seq_cst);
     }
     ~Cover()
     {
-        asm volatile("" : : : "memory");
+        std::atomic_signal_fence( std::memory_order_seq_cst);
         if (!sameLevel)
         {
             setPrio(irq2CortexLevel<callLevel>());

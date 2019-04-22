@@ -42,4 +42,16 @@ Theory of calculation:
 Will need a number of 'clock-domains'.  Within a clock domain it should suffice with a 1 stage 
 queue between modules. Between domains, there will be a need for buffering/interpolation.
 
- 
+
+
+
+
+Interrupt helpers:
+- Set up each interrupt with a specific interrupt level.
+- Define a class which list a number interrupts that can access it. It calculates
+  a maximum priority level to use for protection.
+
+- Create 'covers'. Name ISR that do the locking and generate code from that. Runtime will check
+  that the correct ISR is running of fail. Cover and then restore mask given ISR priority.
+- Wildcard covers will fail if incoming BASEPRI is to high. Othervise store current pri, protect
+  and restore prev runtime value.
