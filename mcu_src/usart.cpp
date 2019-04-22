@@ -73,7 +73,7 @@ Usart::setupUsart1(Usart& usart)
 
     IsrHandlers::del(IrqHandlers::usart1).set<Usart, &Usart::isr>(usart);
 
-    rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN;
+    rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN | RCC_APB2ENR_IOPBEN;
 
     rcc->APB2RSTR |= RCC_APB2RSTR_USART1RST;
     rcc->APB2RSTR &= ~RCC_APB2RSTR_USART1RST;

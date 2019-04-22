@@ -9,6 +9,7 @@
 #define MCU_SRC_COVER_H_
 
 #include "isr.h"
+#include <memory>
 
 template <IrqHandlers handler, IrqHandlers... handlers>
 class IrqList
@@ -63,7 +64,7 @@ class Cover
 
     Cover()
     {
-        // Default value will att a runtime check that we are really
+        // Default value will do a runtime check that we are really
         // in thread mode.
         if (callingHandler == IrqHandlers::maxNo)
         {

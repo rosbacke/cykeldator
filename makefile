@@ -25,8 +25,9 @@ INC+=-Isrc
 INC+=-Imcu_src
 INC+=-I.
 INC+=-I../delegate/include
+INC+=-Idisplay/u8g2/csrc -Idisplay -Idisplay/u8g2/cppsrc
 
-FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread
+FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-section -fdata-section
 
 all: main.hex unittest interpreter
 
@@ -44,7 +45,7 @@ signalchain_test: $(TEST_SRC) $(HEADERS)
 	arm-none-eabi-objdump -D main.elf > main.dis 
 
 main.elf: $(SRC) makefile  $(HEADERS)
-	arm-none-eabi-g++ $(DEF) $(INC) $(FLAGS) -Tmcu_src/stm32_flash.ld -o main.elf $(SRC)
+	arm-none-eabi-g++ $(DEF) $(INC) $(FLAGS) -Wl,--gc-sections -Tmcu_src/stm32_flash.ld -o main.elf  $(SRC) display/display.a
 	arm-none-eabi-objdump -C -S main.elf > main_dump.txt
 
 main.hex : main.elf
@@ -71,6 +72,8 @@ debug: main.elf
 start_openocd:
 	sudo openocd  -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg
 
+display.a:
+	
 # Require Boot0 set to '1' and an manual reset before upload.
 uploadserial: main.hex
 	stm32flash /dev/ttyACM1 -w main.hex
