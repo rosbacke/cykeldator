@@ -28,60 +28,32 @@
  * profiler.
  * - Speed low pass filtering.
  */
-SignalChain::SignalChain() {}
+SignalChain::SignalChain()
+: m_slotTracker(DistanceCalc::wheelDiameter)
+{}
 
 SignalChain::~SignalChain() {}
 
 void
-SignalChain::newTickPoint(const TickPoint& tp)
+SignalChain::addTickPoint(const TickPoint& tp)
 {
-}
-void
-SignalChain::newSysTick(uint32_t sysTick)
-{
+	m_rawCond.addTickPoint(tp);
+	if (m_rawCond.isValid())
+	{
+		auto& res = m_rawCond.m_result;
+		m_median.addDelta(res.m_deltaRelease, res.m_count);
+	}
+	else m_median.reset();
+
+	if (m_rawCond.isValid() && m_median.isValid())
+	{
+		m_slotTracker.addData(m_rawCond.m_result, m_median.isTopAirvent());
+	}
+
 }
 
 void
-RawSignalConditioning::addTickPoint(const TickPoint& tp)
+SignalChain::addSysTick(uint32_t sysTick)
 {
-    m_lastTPSystick = m_cachedSystick;
-    switch (m_state)
-    {
-    case State::INVALID:
-        m_cachedTP = tp;
-        m_state = State::WAIT_NEXT;
-        break;
-    case State::WAIT_NEXT:
-    case State::VALID:
-        if (tp.m_count != m_cachedTP.m_count + 1)
-        {
-            m_state = State::INVALID;
-            break;
-        }
-        m_result.m_count = tp.m_count;
-        m_result.m_deltaAssert =
-            (tp.m_failingEdge - m_cachedTP.m_failingEdge) / 72;
-        m_result.m_deltaRelease =
-            (tp.m_raisingEdge - m_cachedTP.m_raisingEdge) / 72;
-        m_result.m_timeAsserted = (tp.m_raisingEdge - tp.m_failingEdge) / 72;
-        m_result.m_systick = m_cachedSystick;
-        m_state = State::VALID;
-        if (m_update)
-            m_update(*this);
-        m_cachedTP = tp;
-        break;
-    }
-}
-
-void
-RawSignalConditioning::addSystick(uint32_t tick)
-{
-    m_cachedSystick = tick;
-    if (m_state != State::INVALID)
-    {
-        if (int32_t(tick - m_lastTPSystick) >= MAX_TP_AGE_MS)
-        {
-            m_state = State::INVALID;
-        }
-    }
+	m_rawCond.addSystick(sysTick);
 }

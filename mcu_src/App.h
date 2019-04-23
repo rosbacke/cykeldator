@@ -19,19 +19,7 @@
 #include <atomic>
 
 #include "Strings.h"
-
-#include <U8g2lib.h>
-
-
-class Lcd : U8G2
-{
-  public:
-    Lcd() {}
-
-    void setup();
-    void write(int x);
-
-};
+#include "Lcd.h"
 
 class App
 {

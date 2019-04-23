@@ -10,6 +10,15 @@
 
 #include <stdint.h>
 
+enum class State
+{
+	INVALID,
+	VALID,
+    READ_DATA, // Got one measurements, recent enough to be usable.
+    NO_DATA,   // Initial state. No acceptable measurement available.
+};
+
+
 struct TickPoint
 {
     TickPoint() = default;

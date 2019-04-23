@@ -10,8 +10,7 @@
 
 #include "SignalChain.h"
 
-int
-main(int argc, const char* argv[])
+static std::vector<std::array<uint32_t, 4>> readInput()
 {
     std::array<uint32_t, 4> line;
     std::vector<std::array<uint32_t, 4>> data;
@@ -24,18 +23,25 @@ main(int argc, const char* argv[])
         data.push_back(line);
     }
     fmt::print("errcode:{} errno:{}, y:{}\n", x, strerror(errno), y);
+    return data;
+}
+
+int
+main(int argc, const char* argv[])
+{
+    std::vector<std::array<uint32_t, 4>> data = readInput();
 
     struct El1
     {
         State state;
-        RawSignalConditioning::Result res;
+        RawSignalCondition::Result res;
         MedianFiltering::State medState;
         uint32_t median;
         bool isAirVent;
     };
 
     std::vector<El1> data2;
-    RawSignalConditioning rawCond;
+    RawSignalCondition rawCond;
     MedianFiltering medianCond;
 
     uint32_t tick = 0;
@@ -48,7 +54,7 @@ main(int argc, const char* argv[])
             tick++;
         }
         El1 el;
-        rawCond.addTickPoint(TickPoint(d[0], d[1], d[2]));
+        rawCond.addTickPoint(TickPoint(d[0], d[2], d[1]));
         el.res = rawCond.m_result;
         el.state = rawCond.m_state;
         el.medState = MedianFiltering::State::INVALID;

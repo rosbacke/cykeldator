@@ -149,7 +149,7 @@ void OdoTimer::tim2Isr()
     if (send)
     {
         Cover<ShRes, IrqHandlers::tim2> c;
-        m_tp = TickPoint(m_count, m_posEdgeTS, m_negEdgeTS);
+        m_tp = TickPoint(m_count, m_negEdgeTS, m_posEdgeTS);
     }
     if (send && pulseCB)
         pulseCB();

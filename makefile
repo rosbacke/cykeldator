@@ -6,18 +6,17 @@ CXXFLAGS += -mthumb -mcpu=cortex-m3
 
 SPEC:=-specs=nosys.specs
 
-FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -ffunction-sections -nostdlib $(SPEC) -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections
+FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -nostdlib $(SPEC) -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections
 
-HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h mcu_src/App.h
+HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h mcu_src/App.h mcu_src/Lcd.h
+HEADERS+=src/RawSignalCondition.h
 
 STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
 CMSIS_D=$(STFW_D)/CMSIS/CM3
 
-MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp App.cpp
+MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp App.cpp Lcd.cpp
 SRC:=$(MCU_SRC:%=mcu_src/%) 
-#$(CMSIS_D)/CoreSupport/core_cm3.c
 
-#usart.c timer.c drivers.c
 DEF=-DSTM32F10X_MD=1
 
 INC:=-I$(CMSIS_D)/CoreSupport -I$(CMSIS_D)
@@ -34,11 +33,11 @@ all: main.hex unittest interpreter
 unittest: signalchain_test
 	./signalchain_test
 
-TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp
+TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp src/RawSignalCondition.cpp  src/SlotTracker.cpp
 
 
-interpreter : src/interpreter.cpp src/SignalChain.cpp 
-	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp -lfmt
+interpreter : src/interpreter.cpp src/SignalChain.cpp $(HEADERS)
+	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp  src/RawSignalCondition.cpp src/SlotTracker.cpp -lfmt
 
 signalchain_test: $(TEST_SRC) $(HEADERS)
 	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC) -lgtest -lgtest_main
