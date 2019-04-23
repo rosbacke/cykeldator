@@ -16,3 +16,5 @@ debug.gdb
 main.hex
 openocd.log
 signalchain_test
+build
+display/display.a

@@ -7,12 +7,3 @@
 
 #include "TickPoint.h"
 
-TickPoint::TickPoint()
-{
-    // TODO Auto-generated constructor stub
-}
-
-TickPoint::~TickPoint()
-{
-    // TODO Auto-generated destructor stub
-}

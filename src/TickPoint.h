@@ -22,6 +22,7 @@ enum class State
 struct TickPoint
 {
     TickPoint() = default;
+    ~TickPoint() = default;
     TickPoint(uint32_t count, uint32_t fe, uint32_t re)
         : m_count(count), m_failingEdge(fe), m_raisingEdge(re)
     {

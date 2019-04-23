@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <fmt/format.h>
 #include <string.h>
+#include <chrono>
+#include <unistd.h>
 
 #include "SignalChain.h"
 
@@ -44,10 +46,21 @@ main(int argc, const char* argv[])
     RawSignalCondition rawCond;
     MedianFiltering medianCond;
 
+    bool realtime = true;
+
+    auto base = std::chrono::system_clock::now();
+    auto baseTick = data[0][3];
     uint32_t tick = 0;
     for (uint32_t dataIndex = 0; dataIndex < data.size(); dataIndex++)
     {
         auto&& d = data[dataIndex];
+        auto now = std::chrono::system_clock::now();
+        while (now - base < std::chrono::milliseconds(d[3] - baseTick))
+        {
+            now = std::chrono::system_clock::now();
+            usleep(1000);
+        }
+
         while (tick < d[3])
         {
             rawCond.addSystick(tick);
