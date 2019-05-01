@@ -29,7 +29,8 @@
  * - Speed low pass filtering.
  */
 SignalChain::SignalChain()
-: m_slotTracker(DistanceCalc::wheelDiameter)
+: m_slotTracker(DistanceCalc::wheelDiameter),
+  m_distanceCalc(&m_rawCond, &m_median, &m_slotTracker)
 {}
 
 SignalChain::~SignalChain() {}
@@ -41,7 +42,7 @@ SignalChain::addTickPoint(const TickPoint& tp)
 	if (m_rawCond.isValid())
 	{
 		auto& res = m_rawCond.m_result;
-		m_median.addDelta(res.m_deltaRelease, res.m_count);
+		m_median.addDelta(res.m_deltaRelease, res.m_timeAsserted, res.m_count);
 	}
 	else m_median.reset();
 
@@ -49,11 +50,12 @@ SignalChain::addTickPoint(const TickPoint& tp)
 	{
 		m_slotTracker.addData(m_rawCond.m_result, m_median.isTopAirvent());
 	}
-
+	m_distanceCalc.newTickPoint();
 }
 
 void
 SignalChain::addSysTick(uint32_t sysTick)
 {
 	m_rawCond.addSystick(sysTick);
+	m_distanceCalc.newSysTick(sysTick);
 }

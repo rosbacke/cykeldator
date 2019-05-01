@@ -14,9 +14,34 @@ enum class State
 {
 	INVALID,
 	VALID,
-    READ_DATA, // Got one measurements, recent enough to be usable.
+    RD_DATA, // Got one measurements, recent enough to be usable.
     NO_DATA,   // Initial state. No acceptable measurement available.
 };
+
+inline const char* str(const State& s)
+{
+#define CASE(x) case State::x: return #x
+	switch(s)
+	{
+	CASE(INVALID);
+	CASE(VALID);
+	CASE(RD_DATA);
+	CASE(NO_DATA);
+	}
+	return "";
+#undef CASE
+}
+
+#ifdef UNIT_TEST
+#include <iostream>
+#include <fmt/ostream.h>
+
+inline std::ostream& operator<<(std::ostream& os, const State& s)
+{
+	return os << std::string(str(s));
+}
+
+#endif
 
 
 struct TickPoint

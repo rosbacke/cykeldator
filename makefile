@@ -26,21 +26,21 @@ INC+=-I.
 INC+=-I../delegate/include
 INC+=-Idisplay/u8g2/csrc -Idisplay -Idisplay/u8g2/cppsrc
 
-FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-sections -fdata-sections
+FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-sections -fdata-sections -lfmt
 
 all: main.hex unittest interpreter
 
 unittest: signalchain_test
 	./signalchain_test
 
-TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp src/RawSignalCondition.cpp  src/SlotTracker.cpp
+TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp src/RawSignalCondition.cpp  src/SlotTracker.cpp  src/DistanceCalc.cpp
 
 
 interpreter : src/interpreter.cpp src/SignalChain.cpp $(HEADERS)
-	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp  src/RawSignalCondition.cpp src/SlotTracker.cpp -lfmt
+	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp  src/RawSignalCondition.cpp src/SlotTracker.cpp src/DistanceCalc.cpp -lfmt
 
 signalchain_test: $(TEST_SRC) $(HEADERS)
-	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC) -lgtest -lgtest_main
+	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC)  -lfmt -lgtest -lgtest_main
 	arm-none-eabi-objdump -D main.elf > main.dis 
 
 main.elf: $(SRC) makefile  $(HEADERS)

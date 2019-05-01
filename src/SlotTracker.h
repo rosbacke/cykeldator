@@ -18,10 +18,32 @@ class SlotTracker
     ~SlotTracker() = default;
 
     void addData(DeltaTPResult const& deltaTP, bool isAirVent);
-    bool isValid() const
+    bool indexValid() const
     {
-    	return m_valid && m_state == State::READ_DATA;
+    	return m_state == State::RD_DATA;
     }
+    bool dataValid() const
+    {
+    	return m_commitCount >= 1;
+    }
+
+    // For a given slot index, return the angle it spans.
+    uint16_t angle(int index)
+    {
+    	return m_permanent[index];
+    }
+
+    // Return the index of the last read slot. Median::isAirWent is
+    // true for index zero.
+    int index() const
+    {
+    	return m_index != 0 ? m_index - 1 : 36;
+    }
+
+    State m_state = State::INVALID;
+
+    // Contain an angle for each slot+.
+    std::array<uint32_t, 37> m_permanent;
 
   private:
     void commitWheel();
@@ -30,12 +52,11 @@ class SlotTracker
 
     // Circumference of wheel in 0.1mm.
     const int m_wheelDistance;
-
-    bool m_valid = false;
     int m_index = 0;
+
+    // Contain time for each slot in us.
     std::array<uint32_t, 37> m_temp;
-    std::array<uint32_t, 37> m_permanent;
-    State m_state = State::INVALID;
+
 };
 
 #endif /* SRC_SLOTTRACKER_H_ */

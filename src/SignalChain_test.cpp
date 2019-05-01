@@ -41,7 +41,7 @@ TEST(RawSignalCondition, construction)
     ASSERT_EQ(rsc.m_cachedSystick, 10);
 
     sendTP(rsc, 1, 10, 200);
-    ASSERT_EQ(rsc.m_state, State::READ_DATA);
+    ASSERT_EQ(rsc.m_state, State::RD_DATA);
     ASSERT_EQ(rsc.m_cachedSystick, 10);
 
     sendTP(rsc, 2, 410, 700);

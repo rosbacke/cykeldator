@@ -83,22 +83,18 @@ class MedianFiltering
     MedianFiltering() = default;
     static const constexpr int bucketNo = 5;
 
-    enum class State
-    {
-        INVALID,
-        VALID
-    };
     State m_state = State::INVALID;
     uint32_t m_median = 0;
 
     struct Element
     {
         Element() = default;
-        Element(uint32_t dt, uint32_t count)
-            : m_deltaRelease(dt), m_count(count)
+        Element(uint32_t dt, uint32_t asserted, uint32_t count)
+            : m_deltaRelease(dt), m_asserted(asserted), m_count(count)
         {
         }
         uint32_t m_deltaRelease = 0;
+        uint32_t m_asserted = 0;
         uint32_t m_count = 0;
 
         bool operator<(const Element& el)
@@ -143,7 +139,7 @@ class MedianFiltering
         m_index = 0;
     }
 
-    void addDelta(uint32_t deltaRelease, uint32_t count);
+    void addDelta(uint32_t deltaRelease, uint32_t asserted, uint32_t count);
     bool isTopAirvent() const;
 };
 

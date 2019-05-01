@@ -15,9 +15,10 @@ RawSignalCondition::addTickPoint(const TickPoint& tp)
     {
     case State::INVALID:
         m_cachedTP = tp;
-        m_state = State::READ_DATA;
+        m_state = State::RD_DATA;
+        m_result.m_count = tp.m_count;
         break;
-    case State::READ_DATA:
+    case State::RD_DATA:
     case State::VALID:
         if (tp.m_count != m_cachedTP.m_count + 1)
         {
@@ -52,7 +53,7 @@ RawSignalCondition::addSystick(uint32_t tick)
     }
 }
 
-void MedianFiltering::addDelta(uint32_t deltaRelease, uint32_t count)
+void MedianFiltering::addDelta(uint32_t deltaRelease, uint32_t asserted, uint32_t count)
 {
     if (m_state == State::VALID || m_index > 0)
     {
@@ -61,7 +62,7 @@ void MedianFiltering::addDelta(uint32_t deltaRelease, uint32_t count)
             reset();
         }
     }
-    at(m_index) = Element(deltaRelease, count);
+    at(m_index) = Element(deltaRelease, asserted, count);
     m_index = next(&m_index);
     if (m_index == 0)
         m_state = State::VALID;
@@ -83,8 +84,18 @@ bool MedianFiltering::isTopAirvent() const
     auto t1Index = prev(&m_index);
     auto t2Index = prev(&t1Index);
     auto t3Index = prev(&t2Index);
+    auto base = int32_t(at(t3Index).m_deltaRelease);
     auto delta = abs(int32_t(at(t1Index).m_deltaRelease) +
-    		         int32_t(at(t2Index).m_deltaRelease) - int32_t( /*at(t3Index).m_deltaRelease */m_median));
+    		         int32_t(at(t2Index).m_deltaRelease) - base);
 
-    return (delta < 10 || (m_median / delta > 3));
+
+    bool res = delta < 10  //
+    		|| (((base / delta) >= 2)
+    				&& at(t2Index).m_asserted > 2 * at(t1Index).m_asserted);
+
+#ifdef __linux__
+//    fmt::print("{}\t{}\t{}\t{}\t{}\n", base, delta, at(t2Index).m_asserted, at(t1Index).m_asserted, res);
+#endif
+
+    return res;
 }

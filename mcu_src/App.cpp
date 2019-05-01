@@ -10,10 +10,11 @@
 #include "isr_project.h"
 #include "mcuaccess.h"
 
-App::App() :
-		m_timer(hwports::tim2.addr()), m_usart1(hwports::usart1.addr()), lcd(
-				&m_timer) {
-	setup();
+App::App()
+    : m_timer(hwports::tim2.addr()), m_usart1(hwports::usart1.addr()),
+      lcd(&m_timer)
+{
+    setup();
 }
 
 void App::write()
@@ -74,5 +75,3 @@ void App::run()
         m_timer.delay<__WFI>(0);
     }
 }
-
-

@@ -7,6 +7,8 @@
 
 #include "SlotTracker.h"
 
+#include <numeric>
+
 SlotTracker::SlotTracker(int wheelCirc)
 	: m_wheelDistance(wheelCirc)
 {}
@@ -18,13 +20,13 @@ void SlotTracker::addData(DeltaTPResult const& deltaTP, bool isAirVent)
 	case State::INVALID:
 		if (isAirVent)
 		{
-			m_state = State::READ_DATA;
+			m_state = State::RD_DATA;
 			m_index = 0;
 			m_temp[ m_index++ ] = deltaTP.m_deltaRelease;
 		}
 		break;
 
-	case State::READ_DATA:
+	case State::RD_DATA:
 		if (isAirVent && m_index == 37)
 		{
 			commitWheel();
@@ -36,7 +38,7 @@ void SlotTracker::addData(DeltaTPResult const& deltaTP, bool isAirVent)
 			m_index = 0;
 			m_temp[ m_index++ ] = deltaTP.m_deltaRelease;
 		}
-		else if (!isAirVent && m_index != 37) // Lost track
+		else if (!isAirVent && m_index == 37) // Lost track
 		{
 			m_index = 0;
 			m_state = State::INVALID;
@@ -50,19 +52,27 @@ void SlotTracker::addData(DeltaTPResult const& deltaTP, bool isAirVent)
 
 void SlotTracker::commitWheel()
 {
-	if (m_commitCount == 0)
-	{
-		std::copy(m_temp.begin(), m_temp.end(), m_permanent.begin());
-	}
-	else {
-		int factor = m_commitCount < 32 ? 1 + ((m_commitCount + 3) / 2) : 16;
+    uint32_t totalTime = std::accumulate(m_temp.begin(), m_temp.end(), 0);
 
-        std::transform(m_temp.begin(), m_temp.end(), m_permanent.begin(),
-                       m_permanent.begin(),
-                       [&](uint32_t lhs, uint32_t rhs) -> uint32_t {
-                           return (lhs + rhs * (factor - 1)) / factor;
-                       });
-    }
-	m_valid = true;
-	m_commitCount++;
+    // Require about 2m/s speed to start collecting samples. For normal
+    // wheel that is about 1 rev / second. Use that as limit.
+    // Limit is that our time (us) fit in 20 bits.
+    // Follows that parts do the same.
+
+    const uint32_t maxTime = (1 << 20); // us.
+    if (totalTime >= maxTime)
+    	return;
+
+    // First, full assignemnt, then gradual decline.
+    int factor = m_commitCount < 30 ? ((m_commitCount + 3) / 2) : 16;
+
+	uint32_t whole = totalTime >> 4;
+    std::transform(m_temp.begin(), m_temp.end(), m_permanent.begin(),
+                   m_permanent.begin(),
+                   [&](uint32_t lhs, uint32_t rhs) -> uint32_t
+				   {
+    	               uint32_t angle = (lhs << 12) / whole;
+                       return (angle + rhs * (factor - 1)) / factor;
+                   });
+    m_commitCount++;
 }
