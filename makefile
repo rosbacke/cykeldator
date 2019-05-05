@@ -93,3 +93,12 @@ cmake_target_build:
 cmake_host_build:
 	mkdir -p host_build && cd host_build && cmake .. -DBUILD_HOST=1
 	cd host_build && make && make test
+
+cmake_upload: target_build/main
+	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
+	@echo 'monitor halt'
+	@echo 'monitor reset halt'
+	@echo 'load' >> upload.gdb
+	@echo 'monitor reset' >> upload.gdb
+	@echo 'monitor exit' >> upload.gdb
+	$(GDB) --batch -x upload.gdb target_build/main
