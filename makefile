@@ -75,3 +75,14 @@ start_openocd:
 # Require Boot0 set to '1' and an manual reset before upload.
 uploadserial: main.hex
 	stm32flash /dev/ttyACM1 -w main.hex
+
+
+cmake_build: cmake_target_build cmake_host_build
+
+cmake_target_build:
+	mkdir -p target_build && cd target_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/stm32_toolchain.cmake -DBUILD_TARGET=1
+	cd target_build && make
+
+cmake_host_build:
+	mkdir -p host_build && cd host_build && cmake .. -DBUILD_HOST=1
+	cd host_build && make

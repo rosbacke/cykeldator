@@ -49,7 +49,7 @@ constexpr int irq2CortexLevel()
 }
 
 /** User defined object for controlling interrupts
- *  @param handler An enim value inicating which interrupt to handle.
+ *  @param handler An enum value indicating which interrupt to handle.
  *  @param Priority  A priority level for the interrupt. 0 is thread prioriy,
  *         higher numerical value mean priority over lower values.
  *         Default 1 is lowest interrupt priority.
@@ -239,6 +239,7 @@ class IsrHandlers
 
     Del m_isrCB[static_cast<int>(IrqHandlers::maxNo)];
 };
+
 
 // Set up all interrupt functions.
 #define MK_IRQ_FKN(handler, FknName)                      \

@@ -18,3 +18,6 @@ openocd.log
 signalchain_test
 build
 display/display.a
+target_build
+host_build
+build
