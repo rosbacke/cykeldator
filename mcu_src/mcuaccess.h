@@ -8,7 +8,7 @@
 #ifndef MCU_SRC_MCUACCESS_H_
 #define MCU_SRC_MCUACCESS_H_
 
-#include <cassert>
+#include <assert.h>
 #include "HwPort.h"
 
 #if defined(__linux__)

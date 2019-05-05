@@ -63,7 +63,6 @@ upload: main.elf
 
 debug: main.elf
 	echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > debug.gdb
-	#echo 'file main.elf' >> upload.gdb
 	echo 'load' >> debug.gdb
 	echo 'monitor reset halt' >> debug.gdb
 	$(GDB) -x debug.gdb main.elf
@@ -75,6 +74,14 @@ start_openocd:
 # Require Boot0 set to '1' and an manual reset before upload.
 uploadserial: main.hex
 	stm32flash /dev/ttyACM1 -w main.hex
+
+clean:
+	rm -rf target_build
+	rm -rf host_build
+	rm -rf build
+	rm -f main.elf main.hex main_dump.txt target_build signalchain_test
+	rm -f interpreter
+
 
 
 cmake_build: cmake_target_build cmake_host_build

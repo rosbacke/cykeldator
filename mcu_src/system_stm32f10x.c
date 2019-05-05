@@ -61,8 +61,7 @@
 /** @addtogroup STM32F10x_System_Private_Includes
   * @{
   */
-
-#include "mcuaccess.h"
+#include "stm32f10x.h"
 
 /**
   * @}
