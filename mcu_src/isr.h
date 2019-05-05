@@ -9,6 +9,7 @@
 #define MCU_SRC_ISR_H_
 
 #include <mcuaccess.h>
+#include <delegate/delegate.hpp>
 
 enum class IrqHandlers
 {
@@ -166,7 +167,7 @@ inline void enableIrq()
 template <>
 inline void enableIrq<SysTick_IRQn>()
 {
-    ::hwports::systick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+	hwports::systick->CTRL |= SysTick_CTRL_TICKINT_Msk;
 }
 
 template <IRQn_Type IRQn>

@@ -17,14 +17,14 @@ MCU_ACCESS_PORT_DEF(RCC, RCC, rcc);
 MCU_ACCESS_PORT_DEF(I2C, I2C1, i2c1);
 MCU_ACCESS_PORT_DEF(USART, USART1, usart1);
 
-#ifdef UNIT_TEST
+#ifdef __linux__
 
 SysTick_Type systickFake;
-HwPort<SysTick_Type, 0, &systickFake> systick;
+hwports::HwPort<SysTick_Type, 0, &systickFake> systick;
 
 #else
 
-HwPort<SysTick_Type, SysTick_BASE, nullptr> systick;
+hwports::HwPort<SysTick_Type, SysTick_BASE, nullptr> systick;
 
 #endif
 

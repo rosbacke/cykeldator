@@ -1,6 +1,6 @@
 
 
-add_executable(mcu_if mcuif_test.cpp)
+add_executable(mcu_if mcuif_test.cpp mcuaccess.cpp)
 
 target_include_directories(mcu_if PUBLIC ../thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3)
 target_include_directories(mcu_if PUBLIC ../thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/CoreSupport/)
