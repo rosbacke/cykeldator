@@ -10,7 +10,36 @@
 
 #include <cassert>
 
-#include <DeviceSupport/ST/STM32F10x/stm32f10x.h>
+#if defined(__linux__)
+
+  // Workaround to get rid of inline assembly functions in host environment.
+  #define __enable_irq __dummy__enable_irq
+  #define __disable_irq __dummy__disable_irq
+  #define NOP __dummyNOP
+  #define WFI __dummyWFI
+  #define WFE __dummyWFE
+
+  #include <DeviceSupport/ST/STM32F10x/stm32f10x.h>
+
+  #undef __enable_irq
+  #undef __disable_irq
+  #undef NOP
+  #undef WFI
+  #undef WFE
+
+  static __INLINE void __enable_irq() {};
+  static __INLINE void __disable_irq() {};
+  static __INLINE void NOP() {};
+  static __INLINE void WFI() {};
+  static __INLINE void WFE() {};
+
+#else
+
+  #include <DeviceSupport/ST/STM32F10x/stm32f10x.h>
+
+#endif
+
+
 #include <delegate/delegate.hpp>
 
 namespace hwports

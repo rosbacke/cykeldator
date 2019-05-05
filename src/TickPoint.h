@@ -15,7 +15,7 @@ enum class State
 	INVALID,
 	VALID,
     RD_DATA, // Got one measurements, recent enough to be usable.
-    NO_DATA,   // Initial state. No acceptable measurement available.
+    NO_DATA, // Initial state. No acceptable measurement available.
 };
 
 inline const char* str(const State& s)
@@ -32,7 +32,7 @@ inline const char* str(const State& s)
 #undef CASE
 }
 
-#ifdef UNIT_TEST
+#ifdef __linux__
 #include <iostream>
 #include <fmt/ostream.h>
 

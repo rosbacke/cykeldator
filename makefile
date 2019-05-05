@@ -85,4 +85,4 @@ cmake_target_build:
 
 cmake_host_build:
 	mkdir -p host_build && cd host_build && cmake .. -DBUILD_HOST=1
-	cd host_build && make
+	cd host_build && make && make test

@@ -42,8 +42,6 @@ class DistanceCalc
     // Return the last passed spoke speed in mm/sec.
     int spokeSpeed() const;
 
-
-
     RawSignalCondition* m_rawCond = nullptr;
     MedianFiltering* m_median = nullptr;
     SlotTracker* m_slotTracker = nullptr;
@@ -52,8 +50,6 @@ class DistanceCalc
     uint64_t m_totalDistance = 0;
 
     uint32_t m_lastUpdate = 0;
-
-
 };
 
 #endif /* SRC_DISTANCECALC_H_ */
