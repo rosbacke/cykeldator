@@ -19,9 +19,9 @@ TEST(Test_mcuif, can_call_inline_assembly_fkns_in_host)
 {
 	__enable_irq();
 	__disable_irq();
-	NOP();
-	WFI();
-	WFE();
+	__NOP();
+	__WFI();
+	__WFE();
 }
 
 TEST(Test_mcuif, can_access_fake_memory_map_of_a_device)

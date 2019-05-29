@@ -28,26 +28,22 @@ INC+=-Idisplay/u8g2/csrc -Idisplay -Idisplay/u8g2/cppsrc
 
 FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-sections -fdata-sections -lfmt
 
-all: main.hex unittest interpreter
+all: main.elf unittest 
 
-unittest: signalchain_test
-	./signalchain_test
+unittest: host_build/mcu_src/mcu_if_test
+interpreter : host_build/interpreter
+
 
 TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp src/RawSignalCondition.cpp  src/SlotTracker.cpp  src/DistanceCalc.cpp
 
-
-interpreter : src/interpreter.cpp src/SignalChain.cpp $(HEADERS)
-	g++ $(FLAGS_TEST) -o interpreter src/interpreter.cpp src/SignalChain.cpp  src/RawSignalCondition.cpp src/SlotTracker.cpp src/DistanceCalc.cpp -lfmt
 
 signalchain_test: $(TEST_SRC) $(HEADERS)
 	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC)  -lfmt -lgtest -lgtest_main
 	arm-none-eabi-objdump -D main.elf > main.dis 
 
-main.elf: $(SRC) makefile  $(HEADERS)
-	arm-none-eabi-g++ $(DEF) $(INC) $(FLAGS) -Wl,--gc-sections -Tmcu_src/stm32_flash.ld -o main.elf  $(SRC) display/display.a
+main.elf : target_build/src/target_main/main
+	cp target_build/src/target_main/main main.elf
 	arm-none-eabi-objdump -C -S main.elf > main_dump.txt
-
-main.hex : main.elf
 	arm-none-eabi-objcopy -O ihex main.elf main.hex
 	arm-none-eabi-objdump -C -D main.elf > main.txt
 
@@ -68,7 +64,7 @@ debug: main.elf
 	$(GDB) -x debug.gdb main.elf
 
 start_openocd:
-	sudo openocd  -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg
+	sudo openocd  -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2.cfg
 
 
 # Require Boot0 set to '1' and an manual reset before upload.
@@ -86,6 +82,10 @@ clean:
 
 cmake_build: cmake_target_build cmake_host_build
 
+target_build/src/target_main/main : cmake_target_build
+host_build/mcu_src/mcu_if_test : cmake_host_build
+host_build/interpreter : cmake_host_build
+
 cmake_target_build:
 	mkdir -p target_build && cd target_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/stm32_toolchain.cmake -DBUILD_TARGET=1
 	cd target_build && make
@@ -94,8 +94,8 @@ cmake_host_build:
 	mkdir -p host_build && cd host_build && cmake .. -DBUILD_HOST=1
 	cd host_build && make && make test
 
-cmake_upload: target_build/main
-	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
+cmake_upload: main.elf
+	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
 	@echo 'monitor halt'
 	@echo 'monitor reset halt'
 	@echo 'load' >> upload.gdb

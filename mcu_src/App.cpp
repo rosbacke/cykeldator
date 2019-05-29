@@ -11,8 +11,8 @@
 #include "mcuaccess.h"
 
 App::App()
-    : m_timer(hwports::tim2.addr()), m_usart1(hwports::usart1.addr()),
-      lcd(&m_timer)
+    : m_ts(hwports::systick.addr()), m_timer(hwports::tim2.addr(), &m_ts),
+      m_usart1(hwports::usart1.addr()), lcd(&m_ts)
 {
     setup();
 }
@@ -37,7 +37,7 @@ void App::write()
     *p++ = ' ';
     p = uint2str(p, tp.m_raisingEdge);
     *p++ = ' ';
-    p = uint2str(p, m_timer.sysTick());
+    p = uint2str(p, m_ts.systick());
     *p++ = '\r';
     *p++ = '\n';
     *p++ = '\0';
@@ -71,7 +71,7 @@ void App::run()
     while (1)
     {
         write();
-        setLed((m_timer.sysTick() & 0x200) != 0);
-        m_timer.delay<__WFI>(0);
+        setLed((m_ts.systick() & 0x200) != 0);
+        m_ts.delay<__WFI>(0);
     }
 }

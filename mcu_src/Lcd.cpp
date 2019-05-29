@@ -7,12 +7,35 @@
 #include "Lcd.h"
 
 #include <mcuaccess.h>
-#include "timer.h"
-#include "Strings.h"
+#include "TimeSource.h"
+#include <Strings.h>
 
-OdoTimer* Lcd::m_timer = nullptr;
+TimeSource* Lcd::m_ts = nullptr;
 
-uint8_t Lcd::u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
+Lcd::~Lcd()
+{}
+
+#ifdef __linux__
+
+
+#else
+#include <U8g2lib.h>
+
+
+class LcdImpl : public Lcd, private U8G2
+{
+public:
+	virtual void setup() override;
+	virtual void write(int x) override;
+
+	virtual ~LcdImpl() {};
+    static uint8_t u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
+                                               U8X8_UNUSED uint8_t msg,
+                                               U8X8_UNUSED uint8_t arg_int,
+                                               U8X8_UNUSED void* arg_ptr);
+};
+
+uint8_t LcdImpl::u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
                                     U8X8_UNUSED uint8_t msg,
                                     U8X8_UNUSED uint8_t arg_int,
                                     U8X8_UNUSED void* arg_ptr)
@@ -26,7 +49,7 @@ uint8_t Lcd::u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
 
     // Function which implements a delay, arg_int contains the amount of ms
     case U8X8_MSG_DELAY_MILLI:
-    	m_timer->delay(1);
+    	m_ts->delay(1);
         // HAL_Delay(arg_int);
 
         break;
@@ -74,7 +97,7 @@ uint8_t Lcd::u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
     return 1; // command processed successfully.
 }
 
-void Lcd::setup()
+void LcdImpl::setup()
 {
     using hwports::gpiob;
     uint32_t t;
@@ -101,7 +124,7 @@ void Lcd::setup()
     sendBuffer();
 }
 
-void Lcd::write(int x)
+void LcdImpl::write(int x)
 {
     char buff[10];
     uint2str(buff, (unsigned char)x);
@@ -114,3 +137,4 @@ void Lcd::write(int x)
     drawStr(20, 60, buff);
     sendBuffer();
 }
+#endif

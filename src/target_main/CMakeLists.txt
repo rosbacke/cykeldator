@@ -1,0 +1,10 @@
+if(BUILD_HOST EQUAL 1)
+else()
+  add_library(arm_startup_code  startup_stm32f10x_md.s system_stm32f10x.c)
+  target_include_directories(arm_startup_code PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/CoreSupport)
+  target_include_directories(arm_startup_code PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x)
+  target_compile_definitions(arm_startup_code PUBLIC -DSTM32F10X_MD=1)
+
+  add_executable(main main.cpp)
+  target_link_libraries(main mcu_if drivers arm_startup_code display app speedcalc)  
+endif()

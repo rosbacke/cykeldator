@@ -20,6 +20,8 @@
 
 #include "Strings.h"
 #include "Lcd.h"
+#include "TimeSource.h"
+
 
 class App
 {
@@ -38,6 +40,7 @@ class App
     }
 
     std::atomic<bool> m_newVal{false};
+    TimeSource m_ts;
     OdoTimer m_timer;
     Usart m_usart1;
     Lcd lcd;

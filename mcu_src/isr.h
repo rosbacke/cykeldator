@@ -98,7 +98,12 @@ void enableIrq();
 template <IRQn_Type IRQn>
 void disableIrq();
 
-#ifdef UNIT_TEST
+#ifdef __linux__
+
+static inline uint32_t get_BASEPRI(void)
+{
+    return 0;
+}
 
 template <IRQn_Type IRQn, int prio>
 inline void setIsrPriority()

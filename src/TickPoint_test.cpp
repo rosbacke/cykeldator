@@ -6,3 +6,10 @@
  */
 
 #include "TickPoint.h"
+
+#include <gtest/gtest.h>
+
+TEST(TickPoint, tp_test)
+{
+	ASSERT_TRUE(true);
+}

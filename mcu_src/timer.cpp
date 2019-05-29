@@ -4,6 +4,7 @@
 #include "mcuaccess.h"
 
 #include "usart.h"
+#include "TimeSource.h"
 
 #include <delegate/delegate.hpp>
 
@@ -12,13 +13,11 @@
 
 #include <cover.h>
 
-OdoTimer::OdoTimer(TIM_TypeDef* device) : m_dev(device)
+OdoTimer::OdoTimer(TIM_TypeDef* device, TimeSource* ts) : m_dev(device)
 {
-    IsrHandlers::del(IrqHandlers::systick)
-        .set<OdoTimer, &OdoTimer::sysTickIsr>(*this);
     IsrHandlers::del(IrqHandlers::tim2)
         .set<OdoTimer, &OdoTimer::tim2Isr>(*this);
-    setupTimer();
+    setupTimer(ts);
 }
 
 /**
@@ -48,7 +47,7 @@ OdoTimer::OdoTimer(TIM_TypeDef* device) : m_dev(device)
  * Set up PA2 as input to monitor, Timer2 to count up 0-0xffff,
  * CCR3 to detect positive flank and CCR4 for negative flank.
  */
-void OdoTimer::setupTimer()
+void OdoTimer::setupTimer(TimeSource* ts)
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;

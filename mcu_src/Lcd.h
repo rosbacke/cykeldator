@@ -8,29 +8,23 @@
 #ifndef MCU_SRC_LCD_H_
 #define MCU_SRC_LCD_H_
 
-#include <U8g2lib.h>
 
-class OdoTimer;
+class TimeSource;
 
-class Lcd : U8G2
+class Lcd
 {
   public:
-    Lcd(OdoTimer* timer)
+    Lcd(TimeSource* ts)
     {
-        m_timer = timer;
+        m_ts = ts;
     }
 
-    void setup();
+    virtual void setup() {};
+    virtual void write(int x) {};
+    virtual ~Lcd();
 
-
-    void write(int x);
-
-  private:
-    static OdoTimer* m_timer;
-    static uint8_t u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
-                                               U8X8_UNUSED uint8_t msg,
-                                               U8X8_UNUSED uint8_t arg_int,
-                                               U8X8_UNUSED void* arg_ptr);
+  protected:
+    static TimeSource* m_ts;
 };
 
 #endif /* MCU_SRC_LCD_H_ */

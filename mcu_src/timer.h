@@ -11,6 +11,8 @@
 #include <mcuaccess.h>
 
 #include "TickPoint.h"
+#include "TimeSource.h"
+
 #include <atomic>
 #include <stdint.h>
 
@@ -20,21 +22,7 @@
 class OdoTimer
 {
   public:
-    OdoTimer(TIM_TypeDef* device);
-
-    // Return current value of the running systick counter. (ms)
-    uint32_t sysTick()
-    {
-        return m_sysTick;
-    }
-
-    using SleepCB = void (*)(void);
-
-    // Delay for a number of ms.
-    // Can take a template parameter with a callback to be repeatedly
-    // called during the sleep.
-    template <SleepCB = nullptr>
-    void delay(int ms);
+    OdoTimer(TIM_TypeDef* device, TimeSource* ts);
 
     // Called when a timer pulse can be fetched with getTP.
     delegate<void()> pulseCB;
@@ -49,13 +37,7 @@ class OdoTimer
         IrqList<IrqHandlers::systick, IrqHandlers::tim2, IrqHandlers::thread>>;
 
   private:
-    void setupTimer();
-
-    void sysTickIsr()
-    {
-        // Cover<ShRes, IrqHandlers::systick> c;
-        m_sysTick++;
-    }
+    void setupTimer(TimeSource*);
 
     void tim2Isr();
 
@@ -69,21 +51,6 @@ class OdoTimer
     uint32_t m_negEdgeTS{0};
 
     TickPoint m_tp;
-    std::atomic<uint32_t> m_sysTick{0};
 };
-
-template <OdoTimer::SleepCB cb>
-void OdoTimer::delay(int ms)
-{
-    const uint32_t base = m_sysTick.load();
-    auto done = [&]() {
-        auto cnt = m_sysTick.load();
-        return int32_t(cnt - base) >= ms;
-    };
-    do {
-        if (cb)
-            cb();
-    } while(!done());
-}
 
 #endif /* STM32_SRC_TIMER_H_ */

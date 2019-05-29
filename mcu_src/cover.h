@@ -76,7 +76,8 @@ class Cover
         if (callingHandler == IrqHandlers::maxNo)
         {
             uint32_t result = 0;
-            __ASM volatile("MRS %0, basepri_max" : "=&r"(result));
+            result = get_BASEPRI();
+            // __ASM volatile("MRS %0, basepri_max" : "=&r"(result));
             if (result != 0)
             {
                 while (1)
