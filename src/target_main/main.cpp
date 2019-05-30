@@ -72,7 +72,6 @@ void operator delete(void *, std::size_t)
 
 int main()
 {
-    SysTick_Config(72000);
     __enable_irq();
     App app;
 

@@ -13,8 +13,22 @@
 #include <delegate/delegate.hpp>
 
 
+template<typename EnumType>
+struct IrqData
+{
+	constexpr IrqData(EnumType irq_, IRQn_Type cmsis_, int level_)
+	: irq(irq_), cmsis(cmsis_), level(level_)
+	{}
+
+	EnumType irq;
+	IRQn_Type cmsis;
+	int level;
+};
+
+
+
 template <typename EnumType>
-constexpr IRQn_Type irq2cmsis(EnumType enumVal);
+constexpr IrqData<EnumType> irq2Data(EnumType irq);
 
 
 /** User defined object for controlling interrupts
@@ -23,12 +37,12 @@ constexpr IRQn_Type irq2cmsis(EnumType enumVal);
  *         higher numerical value mean priority over lower values.
  *         Default 1 is lowest interrupt priority.
  */
-template <typename IrqSrc, IrqSrc handler, int pri_ = 1>
+template <typename IrqSrc, IrqSrc handler>
 class InterruptSource
 {
   public:
-    static const constexpr int priority = pri_;
-    static const constexpr IRQn_Type cmsisNo = irq2cmsis(handler);
+    static const constexpr int priority = irq2Data(handler).level;
+    static const constexpr IRQn_Type cmsisNo = irq2Data(handler).cmsis;
 
     // Enable/disable interrupt at NVIC level.
     static void active(bool state)

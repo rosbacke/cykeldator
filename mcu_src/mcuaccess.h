@@ -60,6 +60,7 @@
   #define NVIC_SetPriority __dummyNVIC_SetPriority
   #define NVIC_DisableIRQ  __dummyNVIC_DisableIRQ
   #define NVIC_EnableIRQ   __dummyNVIC_EnableIRQ
+  #define SysTick_Config   __dummySysTick_Config
 
   #include <DeviceSupport/ST/STM32F10x/stm32f10x.h>
 
@@ -72,12 +73,15 @@
   #undef NVIC_SetPriority
   #undef NVIC_DisableIRQ
   #undef NVIC_EnableIRQ
+  #undef SysTick_Config
 
   static __INLINE void __enable_irq() {};
   static __INLINE void __disable_irq() {};
   static __INLINE void __NOP() {};
   static __INLINE void __WFI() {};
   static __INLINE void __WFE() {};
+
+  static __INLINE uint32_t SysTick_Config(uint32_t ticks) { return 0; };
 
 
 #else
@@ -124,9 +128,9 @@ MCU_ACCESS_PORT(USART, USART1, usart1);
 
 
 // Note: RCC is used before main is called in clock setup etc.
-// Seems to be issues with replacing it in that code.
-//#undef RCC
-//#define RCC ::hwports::rcc
+// This will only work for later code.
+#undef RCC
+#define RCC ::hwports::rcc
 
 
 #endif /* MCU_SRC_MCUACCESS_H_ */

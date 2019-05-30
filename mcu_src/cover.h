@@ -40,7 +40,7 @@ class IrqList<EnumType_, handler>
 };
 
 // Represent a set of data shared by a set of interrupts and threads and
-// share the same locking strategy.
+// share the same locking strategy. The analog of a mutex.
 // @param IrqList_ A list of all the interrupts and threads that will
 //                 access this resource.
 template <typename IrqList_>
@@ -60,7 +60,7 @@ class SharedResource
     }
 };
 
-// Implement to cover a set of data.
+// Implement to cover a set of data. The analog of a mutex_lock
 //
 template <typename SharedResource,
           typename SharedResource::EnumType callingHandler = SharedResource::EnumType::maxNo>
@@ -93,7 +93,7 @@ class Cover
         }
         if (!sameLevel)
         {
-            israccess::setCortexPri(israccess::irq2CortexLevel<protectLevel>());
+            israccess::setCortexPri(israccess::irq2BasepriLevel<protectLevel>());
         }
         std::atomic_signal_fence( std::memory_order_seq_cst);
     }
@@ -102,31 +102,9 @@ class Cover
         std::atomic_signal_fence( std::memory_order_seq_cst);
         if (!sameLevel)
         {
-            israccess::setCortexPri(israccess::irq2CortexLevel<callLevel>());
+            israccess::setCortexPri(israccess::irq2BasepriLevel<callLevel>());
         }
     }
 };
-
-#if 0
-template <typename Data, typename SharedResource>
-class SharedData
-{
-  public:
-    template <typename... Args>
-    SharedData(Args... args) : m_data(std::forward(args...))
-    {
-    }
-
-    template <IrqSource callingHandler, typename R, typename DataOperator>
-    auto access(DataOperator op) -> R
-    {
-        Cover<SharedResource, callingHandler> c;
-        return op(m_data);
-    }
-
-  private:
-    Data m_data;
-};
-#endif
 
 #endif /* MCU_SRC_COVER_H_ */

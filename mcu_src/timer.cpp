@@ -63,8 +63,8 @@ void OdoTimer::setupTimer(TimeSource* ts)
     m_dev->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
 
     /* set Priority for Cortex-M3 System Interrupts */
-    IrqSource_Tim2::setup();
-    IrqSource_Tim2::active(true);
+    IsrManager<IrqSource::tim2>::setup();
+    IsrManager<IrqSource::tim2>::active(true);
 
     // Set up CC3/CC4 as input capture on IT3.
     m_dev->CCMR2 |= TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1;

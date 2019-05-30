@@ -17,32 +17,31 @@ enum class IrqSource
     usart1,
     usart2,
     thread, // For use in 'cover'
-    maxNo
+    maxNo   // size of the interrupt array.
 };
 
 template <>
-constexpr IRQn_Type irq2cmsis(IrqSource enumVal)
+constexpr IrqData<IrqSource> irq2Data<IrqSource>(IrqSource irq)
 {
-#define CASE(x, y) case IrqSource::x: return y
-	switch(enumVal) {
-	CASE(systick, SysTick_IRQn);
-	CASE(tim2, TIM2_IRQn);
-	CASE(usart1, USART1_IRQn);
-	CASE(usart2, USART2_IRQn);
+#define CASE(x,y,z) case IrqSource::x: return IrqData<IrqSource>(irq, y, z)
+	switch(irq) {
+
+	// 1: Enum value for interrupt.
+	// 2: STM32 identifier for interrupt.
+	// 3: Interrupt level. 1, lowest, 15 highest.
+	CASE(systick, SysTick_IRQn, 1);
+	CASE(tim2,    TIM2_IRQn, 3);
+	CASE(usart1,  USART1_IRQn, 2);
+	CASE(usart2,  USART2_IRQn, 2);
+	CASE(thread,  NonMaskableInt_IRQn, 0);
 	}
 #undef CASE
+	return IrqData<IrqSource>(IrqSource::maxNo, NonMaskableInt_IRQn, 0);
 }
 
-// Set up interrupt priorities for this particular application.
-
-// Param 1 : Type of enum of the interrupt source.
-// Param 2 : Enum value of the interrupt source to define.
-// Param 3 : integral isr priority. 0-thread, higher value interrupts.
-// A higher numerical value have higher precedence.
-using IrqSource_Tim2 = InterruptSource<IrqSource, IrqSource::tim2, 3>;
-using IrqSource_Usart1 = InterruptSource<IrqSource, IrqSource::usart1, 2>;
-using IrqSource_SysTick = InterruptSource<IrqSource, IrqSource::systick, 1>;
-
-using IrqSource_Thread = InterruptSource<IrqSource, IrqSource::thread, 0>;
+// Specialize on out irq enum. To be used for drivers to setup and
+// control the interrupt
+template<IrqSource irqSrc>
+using IsrManager = InterruptSource<IrqSource, irqSrc>;
 
 #endif /* MCU_SRC_ISR_PROJECT_H_ */

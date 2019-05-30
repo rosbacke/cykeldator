@@ -13,6 +13,9 @@ TimeSource::TimeSource(SysTick_Type* stDev)
 {
     IsrHandlers<IrqSource>::del(IrqSource::systick)
         .set<TimeSource, &TimeSource::systickIsr>(*this);
+    IsrManager<IrqSource::systick>::setup();
+    SysTick_Config(72000);
+    //IsrManager<IrqSource::systick>::active(true);
 }
 
 void TimeSource::systickIsr()

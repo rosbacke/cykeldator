@@ -91,8 +91,8 @@ Usart::setupUsart1(Usart& usart)
     t |= (0xa << 4) | (0x8 << 8);
     gpioa->CRH = t;
 
-    IrqSource_Usart1::setup();
-    IrqSource_Usart1::active(true);
+    IsrManager<IrqSource::usart1>::setup();
+    IsrManager<IrqSource::usart1>::active(true);
 
     usart1->CR1 |= USART_CR1_RE | USART_CR1_TE;
 }
