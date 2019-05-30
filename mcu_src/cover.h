@@ -15,15 +15,17 @@ template <typename EnumType_, EnumType_ handler, EnumType_... handlers>
 class IrqList
 {
   public:
-	using EnumType = EnumType_;
+    using EnumType = EnumType_;
     static const constexpr int maxPri =
-        InterruptSource<EnumType, handler>::priority > IrqList<EnumType, handlers...>::maxPri
+        InterruptSource<EnumType, handler>::priority >
+                IrqList<EnumType, handlers...>::maxPri
             ? InterruptSource<EnumType, handler>::priority
             : IrqList<EnumType, handlers...>::maxPri;
 
     constexpr static bool inSet(EnumType queryVal)
     {
-        return queryVal == handler || IrqList<EnumType, handlers...>::inSet(queryVal);
+        return queryVal == handler ||
+               IrqList<EnumType, handlers...>::inSet(queryVal);
     }
 };
 
@@ -31,8 +33,9 @@ template <typename EnumType_, EnumType_ handler>
 class IrqList<EnumType_, handler>
 {
   public:
-	using EnumType = EnumType_;
-    static const constexpr int maxPri = InterruptSource<EnumType, handler>::priority;
+    using EnumType = EnumType_;
+    static const constexpr int maxPri =
+        InterruptSource<EnumType, handler>::priority;
     constexpr static bool inSet(EnumType queryVal)
     {
         return queryVal == handler || queryVal == EnumType_::maxNo;
@@ -53,7 +56,8 @@ class SharedResource
     // Priority level to raise the irq level to during critical sections.
     static const constexpr int protectPri = IrqList::maxPri;
 
-    // Return true if a particular thread/irq is part of of the given static set.
+    // Return true if a particular thread/irq is part of of the given static
+    // set.
     constexpr static bool inSet(EnumType queryVal)
     {
         return IrqList::inSet(queryVal);
@@ -63,7 +67,8 @@ class SharedResource
 // Implement to cover a set of data. The analog of a mutex_lock
 //
 template <typename SharedResource,
-          typename SharedResource::EnumType callingHandler = SharedResource::EnumType::maxNo>
+          typename SharedResource::EnumType callingHandler =
+              SharedResource::EnumType::maxNo>
 class Cover
 {
   public:
@@ -93,13 +98,14 @@ class Cover
         }
         if (!sameLevel)
         {
-            israccess::setCortexPri(israccess::irq2BasepriLevel<protectLevel>());
+            israccess::setCortexPri(
+                israccess::irq2BasepriLevel<protectLevel>());
         }
-        std::atomic_signal_fence( std::memory_order_seq_cst);
+        std::atomic_signal_fence(std::memory_order_seq_cst);
     }
     ~Cover()
     {
-        std::atomic_signal_fence( std::memory_order_seq_cst);
+        std::atomic_signal_fence(std::memory_order_seq_cst);
         if (!sameLevel)
         {
             israccess::setCortexPri(israccess::irq2BasepriLevel<callLevel>());

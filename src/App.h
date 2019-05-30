@@ -36,10 +36,8 @@ class App
   private:
     void timerCB()
     {
-        m_newVal = true;
     }
 
-    std::atomic<bool> m_newVal{false};
     TimeSource m_ts;
     OdoTimer m_timer;
     Usart m_usart1;

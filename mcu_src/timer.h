@@ -17,8 +17,8 @@
 #include <stdint.h>
 
 #include "cover.h"
-#include <delegate/delegate.hpp>
 #include "isr_project.h"
+#include <delegate/delegate.hpp>
 
 class OdoTimer
 {
@@ -28,14 +28,17 @@ class OdoTimer
     // Called when a timer pulse can be fetched with getTP.
     delegate<void()> pulseCB;
 
-    // Call with interrupts disabled.
-    TickPoint getTP()
+    // CAll in thread or timer mode.
+    bool getTP(TickPoint& tp)
     {
-        Cover<ShRes> c;
-        return m_tp;
+        Cover<ShRes, IrqSource::thread> c;
+        tp = m_tp;
+        bool newTp = m_newTp;
+        m_newTp = false;
+        return newTp;
     }
-    using ShRes = SharedResource<
-        IrqList<IrqSource, IrqSource::systick, IrqSource::tim2, IrqSource::thread>>;
+    using ShRes = SharedResource<IrqList<IrqSource, IrqSource::systick,
+                                         IrqSource::tim2, IrqSource::thread>>;
 
   private:
     void setupTimer(TimeSource*);
@@ -52,6 +55,7 @@ class OdoTimer
     uint32_t m_negEdgeTS{0};
 
     TickPoint m_tp;
+    bool m_newTp = false;
 };
 
 #endif /* STM32_SRC_TIMER_H_ */

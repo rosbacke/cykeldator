@@ -149,6 +149,7 @@ void OdoTimer::tim2Isr()
     {
         Cover<ShRes, IrqSource::tim2> c;
         m_tp = TickPoint(m_count, m_negEdgeTS, m_posEdgeTS);
+        m_newTp = true;
     }
     if (send && pulseCB)
         pulseCB();

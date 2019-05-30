@@ -22,13 +22,9 @@ void App::write()
     static char buffer[200];
 
     TickPoint tp;
+    if (!m_timer.getTP(tp))
     {
-        if (!m_newVal)
-        {
-            return;
-        }
-        tp = m_timer.getTP();
-        m_newVal = false;
+    	return;
     }
     char* p = buffer;
     p = uint2str(p, tp.m_count);
