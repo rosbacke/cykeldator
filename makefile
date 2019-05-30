@@ -1,45 +1,7 @@
-CXX:=arm-none-eabi-g++
-OBJ_COPY:=arm-none-eabi-objcopy
-GDB:=gdb-multiarch
-
-CXXFLAGS += -mthumb -mcpu=cortex-m3
-
-SPEC:=-specs=nosys.specs
-
-FLAGS=-Os -g -mthumb -mcpu=cortex-m3 -nostdlib $(SPEC) -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections
-
-HEADERS:=mcu_src/mcuaccess.h mcu_src/isr.h mcu_src/isr_project.h src/Strings.h src/SignalChain.h mcu_src/App.h mcu_src/Lcd.h
-HEADERS+=src/RawSignalCondition.h
-
-STFW_D=thirdparty/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries
-CMSIS_D=$(STFW_D)/CMSIS/CM3
-
-MCU_SRC:=system_stm32f10x.c main.cpp startup_stm32f10x_md.s timer.cpp usart.cpp mcuaccess.cpp isr.cpp App.cpp Lcd.cpp
-SRC:=$(MCU_SRC:%=mcu_src/%) 
-
-DEF=-DSTM32F10X_MD=1
-
-INC:=-I$(CMSIS_D)/CoreSupport -I$(CMSIS_D)
-INC+=-Isrc
-INC+=-Imcu_src
-INC+=-I.
-INC+=-I../delegate/include
-INC+=-Idisplay/u8g2/csrc -Idisplay -Idisplay/u8g2/cppsrc
-
-FLAGS_TEST=-Os -g $(DEF) $(INC) -DUNIT_TEST=1 -I/usr/src/gtest/include -L /usr/src/gtest -L /usr/src/gtest/build -pthread -ffunction-sections -fdata-sections -lfmt
-
-all: main.elf unittest 
+all: main.elf unittest interpreter
 
 unittest: host_build/mcu_src/mcu_if_test
-interpreter : host_build/interpreter
-
-
-TEST_SRC := src/SignalChain.cpp src/SignalChain_test.cpp src/timer_test.cpp mcu_src/timer.cpp mcu_src/mcuaccess.cpp mcu_src/isr.cpp src/RawSignalCondition.cpp  src/SlotTracker.cpp  src/DistanceCalc.cpp
-
-
-signalchain_test: $(TEST_SRC) $(HEADERS)
-	g++ $(FLAGS_TEST) -o signalchain_test $(TEST_SRC)  -lfmt -lgtest -lgtest_main
-	arm-none-eabi-objdump -D main.elf > main.dis 
+interpreter : host_build/src/interpreter/interpreter 
 
 main.elf : target_build/src/target_main/main
 	cp target_build/src/target_main/main main.elf
@@ -47,7 +9,6 @@ main.elf : target_build/src/target_main/main
 	arm-none-eabi-objcopy -O ihex main.elf main.hex
 	arm-none-eabi-objdump -C -D main.elf > main.txt
 
-#echo 'file main.elf' >> upload.gdb
 upload: main.elf
 	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2-1.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
 	@echo 'monitor halt'
@@ -68,7 +29,7 @@ start_openocd:
 
 
 # Require Boot0 set to '1' and an manual reset before upload.
-uploadserial: main.hex
+uploadserial: main.elf
 	stm32flash /dev/ttyACM1 -w main.hex
 
 clean:
@@ -79,12 +40,11 @@ clean:
 	rm -f interpreter
 
 
-
 cmake_build: cmake_target_build cmake_host_build
 
 target_build/src/target_main/main : cmake_target_build
 host_build/mcu_src/mcu_if_test : cmake_host_build
-host_build/interpreter : cmake_host_build
+host_build/src/interpreter/interpreter : cmake_host_build
 
 cmake_target_build:
 	mkdir -p target_build && cd target_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/stm32_toolchain.cmake -DBUILD_TARGET=1

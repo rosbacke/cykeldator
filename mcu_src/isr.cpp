@@ -6,13 +6,14 @@
  */
 
 #include "isr.h"
+#include "isr_project.h"
 
-IsrHandlers IsrHandlers::instance;
+namespace israccess {
+uint32_t g_currentCortexIsrLevel = 0;
+}
 
-int basePri = 0;
+MK_SYSIRQ_FKN(IrqSource::systick, SysTick)
 
-MK_SYSIRQ_FKN(systick, SysTick)
-
-MK_IRQ_FKN(tim2, TIM2)
-MK_IRQ_FKN(usart1, USART1)
-MK_IRQ_FKN(usart2, USART2)
+MK_IRQ_FKN(IrqSource::tim2, TIM2)
+MK_IRQ_FKN(IrqSource::usart1, USART1)
+MK_IRQ_FKN(IrqSource::usart2, USART2)

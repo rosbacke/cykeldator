@@ -506,7 +506,7 @@ void __set_MSP(uint32_t topOfMainStack)
  *
  * Return the content of the base priority register
  */
-extern "C" uint32_t __get_BASEPRI(void)
+uint32_t __get_BASEPRI(void)
 {
   uint32_t result=0;
   
@@ -521,7 +521,7 @@ extern "C" uint32_t __get_BASEPRI(void)
  *
  * Set the base priority register
  */
-extern "C" void __set_BASEPRI(uint32_t value)
+void __set_BASEPRI(uint32_t value)
 {
   __ASM volatile ("MSR basepri, %0" : : "r" (value) );
 }

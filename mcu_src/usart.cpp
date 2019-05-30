@@ -56,7 +56,7 @@ Usart::checkRead()
 void
 Usart::blockwrite(const char* str)
 {
-	Cover<UsartCover, IrqHandlers::thread> cover;
+	Cover<UsartCover, IrqSource::thread> cover;
     while (*str)
         tx.write(*str++);
     m_regs->CR1 |= USART_CR1_TXEIE;
@@ -71,7 +71,7 @@ Usart::setupUsart1(Usart& usart)
     using hwports::rcc;
     using hwports::usart1;
 
-    IsrHandlers::del(IrqHandlers::usart1).set<Usart, &Usart::isr>(usart);
+    IsrHandlers<IrqSource>::del(IrqSource::usart1).set<Usart, &Usart::isr>(usart);
 
     rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN | RCC_APB2ENR_IOPBEN;
 

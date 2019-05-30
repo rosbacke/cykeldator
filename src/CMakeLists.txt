@@ -3,9 +3,20 @@ add_library(speedcalc TickPoint.cpp Strings.cpp SlotTracker.cpp SignalChain.cpp 
 target_link_libraries(speedcalc PUBLIC delegate)
 target_include_directories(speedcalc PUBLIC .)
 
+add_library(lcd  Lcd.cpp)
+
+target_link_libraries(lcd mcu_if speedcalc)
+
+add_library(app  App.cpp)
+target_link_libraries(app lcd speedcalc drivers mcu_if)
+
+
 if(BUILD_HOST EQUAL 1)
   add_executable(speedcalc_test SignalChain_test.cpp TickPoint_test.cpp)
   target_link_libraries(speedcalc_test speedcalc gtest gtest_main Threads::Threads delegate)
   add_test(speedcalc_test speedcalc_test)
 else()
+  target_link_libraries(app display)
+  target_link_libraries(lcd display speedcalc)
+
 endif()

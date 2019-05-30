@@ -6,12 +6,12 @@
  */
 #include "TimeSource.h"
 
-#include "isr.h"
+#include "isr_project.h"
 
 TimeSource::TimeSource(SysTick_Type* stDev)
 	: m_stDev(stDev)
 {
-    IsrHandlers::del(IrqHandlers::systick)
+    IsrHandlers<IrqSource>::del(IrqSource::systick)
         .set<TimeSource, &TimeSource::systickIsr>(*this);
 }
 

@@ -12,11 +12,17 @@
 
 static int s_delayCnt;
 
+
+static void callSysTick()
+{
+    IsrHandlers<IrqSource>::callIsr(IrqSource::systick);
+}
+
 static void
 delayTestCB()
 {
     s_delayCnt++;
-    IsrHandlers::callIsr(IrqHandlers::systick);
+    callSysTick();
 }
 
 TEST(timer, construction)
@@ -35,10 +41,10 @@ TEST(timer, construction)
     TimeSource ts(&sysTickFake);
 
     EXPECT_EQ(ts.systick(), 0);
-    IsrHandlers::callIsr(IrqHandlers::systick);
+    callSysTick();
 
     EXPECT_EQ(ts.systick(), 1);
-    IsrHandlers::callIsr(IrqHandlers::systick);
+    callSysTick();
 
     EXPECT_EQ(ts.systick(), 2);
 

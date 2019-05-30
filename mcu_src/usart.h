@@ -14,6 +14,7 @@
 
 #include "cover.h"
 #include "RingBuffer.h"
+#include "isr_project.h"
 
 class Usart
 {
@@ -25,7 +26,7 @@ class Usart
 
   private:
     using UsartCover =
-        SharedResource<IrqList<IrqHandlers::usart1, IrqHandlers::thread>>;
+        SharedResource<IrqList<IrqSource, IrqSource::usart1, IrqSource::thread>>;
 
     void isr();
     bool readByte(uint8_t* data);

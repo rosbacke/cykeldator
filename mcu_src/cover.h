@@ -11,29 +11,31 @@
 #include "isr.h"
 #include <memory>
 
-template <IrqHandlers handler, IrqHandlers... handlers>
+template <typename EnumType_, EnumType_ handler, EnumType_... handlers>
 class IrqList
 {
   public:
+	using EnumType = EnumType_;
     static const constexpr int maxPri =
-        InterruptSource<handler>::priority > IrqList<handlers...>::maxPri
-            ? InterruptSource<handler>::priority
-            : IrqList<handlers...>::maxPri;
+        InterruptSource<EnumType, handler>::priority > IrqList<EnumType, handlers...>::maxPri
+            ? InterruptSource<EnumType, handler>::priority
+            : IrqList<EnumType, handlers...>::maxPri;
 
-    constexpr static bool inSet(IrqHandlers queryVal)
+    constexpr static bool inSet(EnumType queryVal)
     {
-        return queryVal == handler || IrqList<handlers...>::inSet(queryVal);
+        return queryVal == handler || IrqList<EnumType, handlers...>::inSet(queryVal);
     }
 };
 
-template <IrqHandlers handler>
-class IrqList<handler>
+template <typename EnumType_, EnumType_ handler>
+class IrqList<EnumType_, handler>
 {
   public:
-    static const constexpr int maxPri = InterruptSource<handler>::priority;
-    constexpr static bool inSet(IrqHandlers queryVal)
+	using EnumType = EnumType_;
+    static const constexpr int maxPri = InterruptSource<EnumType, handler>::priority;
+    constexpr static bool inSet(EnumType queryVal)
     {
-        return queryVal == handler || queryVal == IrqHandlers::maxNo;
+        return queryVal == handler || queryVal == EnumType_::maxNo;
     }
 };
 
@@ -46,12 +48,13 @@ class SharedResource
 {
   public:
     using IrqList = IrqList_;
+    using EnumType = typename IrqList::EnumType;
 
     // Priority level to raise the irq level to during critical sections.
     static const constexpr int protectPri = IrqList::maxPri;
 
     // Return true if a particular thread/irq is part of of the given static set.
-    constexpr static bool inSet(IrqHandlers queryVal)
+    constexpr static bool inSet(EnumType queryVal)
     {
         return IrqList::inSet(queryVal);
     }
@@ -60,12 +63,13 @@ class SharedResource
 // Implement to cover a set of data.
 //
 template <typename SharedResource,
-          IrqHandlers callingHandler = IrqHandlers::maxNo>
+          typename SharedResource::EnumType callingHandler = SharedResource::EnumType::maxNo>
 class Cover
 {
   public:
+    using EnumType = typename SharedResource::EnumType;
     static const constexpr int callLevel =
-        InterruptSource<callingHandler>::priority;
+        InterruptSource<EnumType, callingHandler>::priority;
     static const constexpr int protectLevel = SharedResource::protectPri;
     static const constexpr bool sameLevel = callLevel == protectLevel;
 
@@ -73,11 +77,10 @@ class Cover
     {
         // Default value will do a runtime check that we are really
         // in thread mode.
-        if (callingHandler == IrqHandlers::maxNo)
+        if (callingHandler == EnumType::maxNo)
         {
             uint32_t result = 0;
-            result = get_BASEPRI();
-            // __ASM volatile("MRS %0, basepri_max" : "=&r"(result));
+            result = israccess::get_BASEPRI();
             if (result != 0)
             {
                 while (1)
@@ -90,7 +93,7 @@ class Cover
         }
         if (!sameLevel)
         {
-            setPrio(irq2CortexLevel<protectLevel>());
+            israccess::setCortexPri(israccess::irq2CortexLevel<protectLevel>());
         }
         std::atomic_signal_fence( std::memory_order_seq_cst);
     }
@@ -99,7 +102,7 @@ class Cover
         std::atomic_signal_fence( std::memory_order_seq_cst);
         if (!sameLevel)
         {
-            setPrio(irq2CortexLevel<callLevel>());
+            israccess::setCortexPri(israccess::irq2CortexLevel<callLevel>());
         }
     }
 };
@@ -114,7 +117,7 @@ class SharedData
     {
     }
 
-    template <IrqHandlers callingHandler, typename R, typename DataOperator>
+    template <IrqSource callingHandler, typename R, typename DataOperator>
     auto access(DataOperator op) -> R
     {
         Cover<SharedResource, callingHandler> c;

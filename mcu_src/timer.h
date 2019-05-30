@@ -18,6 +18,7 @@
 
 #include "cover.h"
 #include <delegate/delegate.hpp>
+#include "isr_project.h"
 
 class OdoTimer
 {
@@ -34,7 +35,7 @@ class OdoTimer
         return m_tp;
     }
     using ShRes = SharedResource<
-        IrqList<IrqHandlers::systick, IrqHandlers::tim2, IrqHandlers::thread>>;
+        IrqList<IrqSource, IrqSource::systick, IrqSource::tim2, IrqSource::thread>>;
 
   private:
     void setupTimer(TimeSource*);

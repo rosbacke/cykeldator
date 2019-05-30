@@ -15,7 +15,7 @@
 
 OdoTimer::OdoTimer(TIM_TypeDef* device, TimeSource* ts) : m_dev(device)
 {
-    IsrHandlers::del(IrqHandlers::tim2)
+    IsrHandlers<IrqSource>::del(IrqSource::tim2)
         .set<OdoTimer, &OdoTimer::tim2Isr>(*this);
     setupTimer(ts);
 }
@@ -147,7 +147,7 @@ void OdoTimer::tim2Isr()
     m_dev->SR &= ~(uint32_t)srMask;
     if (send)
     {
-        Cover<ShRes, IrqHandlers::tim2> c;
+        Cover<ShRes, IrqSource::tim2> c;
         m_tp = TickPoint(m_count, m_negEdgeTS, m_posEdgeTS);
     }
     if (send && pulseCB)
