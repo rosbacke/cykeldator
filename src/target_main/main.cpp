@@ -52,16 +52,8 @@ extern "C" void HardFault_Handler(void)
     while (1)
         ;
 }
-#if 0
-void * operator new(std::size_t n)
-{
-  void * const p = std::malloc(n);
-  // handle p == 0
-  return p;
-}
-#endif
 
-void operator delete(void * p) // or delete(void *, std::size_t)
+void operator delete(void * p)
 {
 }
 
@@ -72,6 +64,9 @@ void operator delete(void *, std::size_t)
 
 int main()
 {
+	isrInit();
+
+	// SysTick_Config(72000);
     __enable_irq();
     App app;
 

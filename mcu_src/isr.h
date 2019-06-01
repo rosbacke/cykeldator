@@ -12,6 +12,7 @@
 #include <israccess.h>
 #include <delegate/delegate.hpp>
 
+void isrInit();
 
 template<typename EnumType>
 struct IrqData
@@ -24,7 +25,6 @@ struct IrqData
 	IRQn_Type cmsis;
 	int level;
 };
-
 
 
 template <typename EnumType>

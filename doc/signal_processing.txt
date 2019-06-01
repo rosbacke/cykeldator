@@ -5,7 +5,7 @@ Purpose: Describe the signal processing chain.
 ## Inputs
 We have 2 sources of signal input:
 1: Systick counter indicating passing of time with ms resolution. One interrupt call / ms. 
-2: Pulses (with timestamps) when the spokes pass the IR sensor. One IRQ call for each spoke.
+2: Pulses (with timestamps) when the spokes pass the IR sensor. One IRQ call for each spoke enter/leave.
 
 ### Systick:
 Delivered as an uint32_t counter value. overflow after about 49 days. (Disregard)
@@ -13,7 +13,7 @@ Signal name: systick(x) : For some x, retun the counter value of systick.
 
 ### Pulses:
 A GPIO pin connected to the hardware counter. The counter counts at 72MHz. 
-The pulse driver extent the counter value to 32 bit and will overflow after 55 seconds.
+The pulse driver extend the counter value to 32 bit is SW and will overflow after 55 seconds.
 At rest the GPIO signal reads as a '1'. When covered by a spoke (or air valve) it reads as a '0'.
 
 The timer uses 2 capture registers to collect the falling and rising flank of the signal. This
@@ -24,8 +24,8 @@ and triggers a Timepoint readout with the raising edge. This includes the systic
 merging the 2 datastreams.
 
 ### Count:
-With every reported pulse, there is a count value associated. This increase with one for each reported count.
-
+With every reported pulse, there is a count value associated. This increase with one for 
+each reported count.
 
 ## Notation:
 View our measurements as a discrete signal stream, indexed primarily by the count.
@@ -41,7 +41,7 @@ can be relied upon.
 
 ### Raw signal conditioning. (rawcond)
 
-Will calculate delta from previous pulse. It uses the systick count/interrupt 
+Will calculate delta from previous pulse. It uses the systick count/interrupt
 to detect when the stored data is to old and will invalidate stored data if it becomes to old.
 It will handle the rollover of the timer capture registers.
 Of the outputs, the 'raisingEdge' is used as the reference pointe between 2 delta periods.
@@ -57,7 +57,7 @@ Output:
   - deltaRising : delta time in microseconds between last 2 rising edges.
   - deltaFalling : delta time in microseconds between last 2 falling edges.
   - deltaAssert : delta time in microseconds for period when sensor was covered.
-  - systick : Systick deliveded with the last pulse.
+  - systick : Systick delivered with the last pulse.
 
 ### Median filtering (median)
 
@@ -126,7 +126,7 @@ States:
 
 Output:
 state : invalid, collecting, valid.
-spoke index : Index of the last period measured. Period 0 is the one where vir-valve is true.
+spoke index : Index of the last period measured. Period 0 is the one where air-valve is true.
 
 ### Angle2distance
 
@@ -140,6 +140,4 @@ in 0.1mm steps from available sources.
 
 
 It requires a valid median filter
-
-
 

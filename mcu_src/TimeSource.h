@@ -13,6 +13,9 @@
 
 #include <delegate/delegate.hpp>
 #include <mcuaccess.h>
+#include <isr_project.h>
+#include <cover.h>
+
 
 class TimeSource
 {
@@ -20,10 +23,8 @@ public:
 	TimeSource(SysTick_Type* stDev);
 
     // Return current value of the running systick counter. (ms)
-    uint32_t systick()
-    {
-        return m_systick;
-    }
+	// Require thread context.
+    uint32_t systick() const;
 
     using SleepCB = void (*)(void);
 
@@ -36,18 +37,22 @@ public:
     delegate<void(uint32_t)> m_systickCB;
 
 private:
-    SysTick_Type* m_stDev = nullptr;
-    void systickIsr();
+  using ShRes =
+      SharedResource<IrqList<IrqSource, IrqSource::systick, IrqSource::thread>>;
 
-    std::atomic<uint32_t> m_systick{0};
+  SysTick_Type* m_stDev = nullptr;
+  void systickIsr();
+
+  uint32_t m_systick{0};
 };
 
 template <TimeSource::SleepCB cb>
 void TimeSource::delay(int ms)
 {
-    const uint32_t base = m_systick.load();
+    const uint32_t base = m_systick;
     auto done = [&]() {
-        auto cnt = m_systick.load();
+		Cover<ShRes, IrqSource::thread> c;
+        auto cnt = m_systick;
         return int32_t(cnt - base) >= ms;
     };
     do {

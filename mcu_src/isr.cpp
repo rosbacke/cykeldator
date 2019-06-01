@@ -12,6 +12,9 @@ namespace israccess {
 uint32_t g_currentCortexIsrLevel = 0;
 }
 
+void isrInit()
+{}
+
 MK_SYSIRQ_FKN(IrqSource::systick, SysTick)
 
 MK_IRQ_FKN(IrqSource::tim2, TIM2)

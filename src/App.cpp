@@ -17,15 +17,9 @@ App::App()
     setup();
 }
 
-void App::write()
+void App::writeRawUsart(const TickPoint& tp)
 {
-    static char buffer[200];
-
-    TickPoint tp;
-    if (!m_timer.getTP(tp))
-    {
-    	return;
-    }
+	static char buffer[200];
     char* p = buffer;
     p = uint2str(p, tp.m_count);
     *p++ = ' ';
@@ -38,8 +32,6 @@ void App::write()
     *p++ = '\n';
     *p++ = '\0';
     m_usart1.blockwrite(buffer);
-
-    lcd.write(tp.m_count);
 }
 
 void App::setLed(bool on)
@@ -64,10 +56,39 @@ void App::setup()
 
 void App::run()
 {
+	bool rawUsart = true;
+	uint32_t lastTick = 0;
+	uint32_t lastLed = 0;
+	uint32_t lastDisplayUpdate = 0;
+    TickPoint tp;
+
     while (1)
     {
-        write();
-        setLed((m_ts.systick() & 0x200) != 0);
+    	uint32_t tick = m_ts.systick();
+    	bool gotTP = m_timer.getTP(tp);
+
+    	while (tick != lastTick)
+    	{
+        	m_calc.addSysTick(lastTick++);
+    	}
+        if (gotTP)
+        {
+        	if (rawUsart)
+        	{
+        		writeRawUsart(tp);
+        	}
+        	m_calc.addTickPoint(tp);
+            lcd.write(tp.m_count);
+        }
+        if (int32_t(lastTick - lastLed) >= 500)
+        {
+        	setLed(true);
+        }
+        if (int32_t(lastTick - lastLed) >= 1000)
+        {
+        	setLed(false);
+        	lastLed = lastTick;
+        }
         m_ts.delay<__WFI>(0);
     }
 }

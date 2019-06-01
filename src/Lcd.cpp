@@ -15,7 +15,15 @@ TimeSource* Lcd::m_ts = nullptr;
 Lcd::~Lcd()
 {}
 
+Lcd::Lcd(TimeSource* ts)
+{
+    m_ts = ts;
+}
+
 #ifdef __linux__
+
+class LcdImpl2 : public Lcd
+{};
 
 
 #else
@@ -28,12 +36,20 @@ public:
 	virtual void setup() override;
 	virtual void write(int x) override;
 
+    virtual void write(BoxId, const char *str) override;
+
+
 	virtual ~LcdImpl() {};
     static uint8_t u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
                                                U8X8_UNUSED uint8_t msg,
                                                U8X8_UNUSED uint8_t arg_int,
                                                U8X8_UNUSED void* arg_ptr);
 };
+
+void LcdImpl::write(BoxId, const char *str)
+{
+
+}
 
 uint8_t LcdImpl::u8g2_gpio_and_delay_stm32_2(U8X8_UNUSED u8x8_t* u8x8,
                                     U8X8_UNUSED uint8_t msg,

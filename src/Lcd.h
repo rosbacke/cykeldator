@@ -14,10 +14,15 @@ class TimeSource;
 class Lcd
 {
   public:
-    Lcd(TimeSource* ts)
-    {
-        m_ts = ts;
-    }
+	enum class BoxId {
+		status,
+		main,
+		b_left,
+		b_right
+	};
+    Lcd(TimeSource* ts);
+
+    virtual void write(BoxId, const char *str) {};
 
     virtual void setup() {};
     virtual void write(int x) {};

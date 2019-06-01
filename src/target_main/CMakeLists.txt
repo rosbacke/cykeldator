@@ -6,5 +6,5 @@ else()
   target_compile_definitions(arm_startup_code PUBLIC -DSTM32F10X_MD=1)
 
   add_executable(main main.cpp)
-  target_link_libraries(main arm_startup_code app display speedcalc drivers mcu_if)  
+  target_link_libraries(main arm_startup_code app lcd display speedcalc drivers mcu_if)  
 endif()

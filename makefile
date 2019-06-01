@@ -1,4 +1,4 @@
-all: main.elf unittest interpreter
+all: out/main.elf unittest interpreter
 
 unittest: host_build/mcu_src/mcu_if_test
 interpreter : host_build/src/interpreter/interpreter 

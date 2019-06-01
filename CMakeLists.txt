@@ -1,5 +1,5 @@
+project(bike-computer C CXX ASM)
 cmake_minimum_required(VERSION 3.10)
-project ( Test C CXX ASM)
 
 if(BUILD_TARGET EQUAL 1)
     SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Os -g -mthumb -mcpu=cortex-m3 -nostdlib -ffunction-sections -fdata-sections")
@@ -10,11 +10,11 @@ if(BUILD_TARGET EQUAL 1)
     add_library(display_st STATIC IMPORTED)
     set_target_properties(display_st PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/display/display.a)
 
-    add_library(display display.cpp)
+    add_library(display src/display.cpp)
     target_link_libraries(display display_st)
-    target_include_directories(display PUBLIC display)
-    target_include_directories(display PUBLIC display/u8g2/csrc)
-    target_include_directories(display PUBLIC display/u8g2/cppsrc)
+    target_include_directories(display PUBLIC ${CMAKE_SOURCE_DIR}/display)
+    target_include_directories(display PUBLIC ${CMAKE_SOURCE_DIR}/display/u8g2/csrc)
+    target_include_directories(display PUBLIC ${CMAKE_SOURCE_DIR}/display/u8g2/cppsrc)
 
     add_subdirectory(src/target_main)
 

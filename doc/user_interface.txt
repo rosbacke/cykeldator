@@ -1,0 +1,30 @@
+
+The bike computer uses an 1.3" monocrome Oled display for output.
+It got 128x64 pixels. With support software we can write text to arbitrary positions.
+
+The display is divided into 3 verical section1:
+1: top row. Status information. e.g. battery, mode active etc.
+2: main row : Main display value. Typically speed.
+3: bottom row: sec display. Typically ride distance or total distance.
+
+We have 2 buttons. Each can detect short / long push, giving 4 different events.
+
+Status row: battery status, calculation quality, logging active, UI mode. speed unit, length unit.
+
+Use ',' for decimal separator, ' for 1000 separator.
+
+Basic display modes:
+
+Speed: (spd)
+1 : Statusrow
+2 : Speed, 2.1 digits.
+3 : (Trip distance, m) (total dist, km)
+
+Distance : (dist)
+1 : Statusrow
+2 : Tripdistance, m 6 digits.
+3 : (speed) (total dist, km)
+
+
+B1s, next mode. B2s, prev mode.
+B2l, Enter setup.

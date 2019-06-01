@@ -21,7 +21,9 @@
 #include "Strings.h"
 #include "Lcd.h"
 #include "TimeSource.h"
+#include "SignalChain.h"
 
+class TickPoint;
 
 class App
 {
@@ -33,6 +35,8 @@ class App
     void run();
     void setLed(bool on);
 
+    void writeRawUsart(const TickPoint& tp);
+
   private:
     void timerCB()
     {
@@ -42,6 +46,7 @@ class App
     OdoTimer m_timer;
     Usart m_usart1;
     Lcd lcd;
+    SignalChain m_calc;
 };
 
 #endif /* MCU_SRC_APP_H_ */

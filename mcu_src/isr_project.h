@@ -21,8 +21,7 @@ enum class IrqSource
 };
 
 template <>
-constexpr IrqData<IrqSource> irq2Data<IrqSource>(IrqSource irq)
-{
+constexpr IrqData<IrqSource> irq2Data<IrqSource>(IrqSource irq) {
 #define CASE(x,y,z) case IrqSource::x: return IrqData<IrqSource>(irq, y, z)
 	switch(irq) {
 
