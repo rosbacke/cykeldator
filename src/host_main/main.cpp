@@ -1,29 +1,28 @@
 /*
- * interpreter.cpp
+ * main.cpp
  *
- *  Created on: Apr 15, 2019
+ *  Created on: Jun 2, 2019
  *      Author: mikaelr
  */
 
-#include "SignalChain.h"
+
 
 #include <errno.h>
 #include <fmt/format.h>
 #include <string.h>
 #include <chrono>
 #include <unistd.h>
-#include <boost/program_options.hpp>
 
-namespace po = boost::program_options;
+#include "SignalChain.h"
 
-static std::vector<std::array<uint32_t, 4>> readInput(FILE* input)
+static std::vector<std::array<uint32_t, 4>> readInput()
 {
     std::array<uint32_t, 4> line;
     std::vector<std::array<uint32_t, 4>> data;
     int x;
     int y = 0;
-    while ((x = fscanf(input, "%x %x %x %x", &line[0], &line[2], &line[1],
-                       &line[3])) == 4)
+    while ((x = scanf("%x %x %x %x", &line[0], &line[2], &line[1], &line[3])) ==
+           4)
     {
         ++y;
         data.push_back(line);
@@ -66,9 +65,10 @@ void processSample(uint32_t index, SignalChain& sc)
 			   speedi*3.6*0.001, speed - speedi*3.6*0.001);
 }
 
-void run_signalchain()
+int
+main(int argc, const char* argv[])
 {
-    std::vector<std::array<uint32_t, 4>> data = readInput(stdin);
+    std::vector<std::array<uint32_t, 4>> data = readInput();
 
     SignalChain signalChain;
 
@@ -105,24 +105,5 @@ void run_signalchain()
 
     for (auto i : signalChain.m_slotTracker.m_permanent)
         fmt::print("     {}\n", double(i)/65536.0);
-}
-
-int
-main(int argc, const char* argv[])
-{
-	po::options_description desc("Allowed options");
-	desc.add_options()
-	    ("help", "produce help message")
-	    ("compression", po::value<int>(), "set compression level")
-	;
-
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
-
-	if (vm.count("help")) {
-		std::cout << desc;
-	    return 1;
-	}
-	run_signalchain();
+    fmt::print("{}\n", argc);
 }

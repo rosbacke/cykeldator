@@ -80,37 +80,36 @@ class Cover
 
     Cover()
     {
-        // Default value will do a runtime check that we are really
-        // in thread mode.
-        if (callingHandler == EnumType::maxNo)
-        {
-            uint32_t result = 0;
-            result = israccess::get_BASEPRI();
-            if (result != 0)
-            {
-                while (1)
-                    ;
-            }
-        }
+    	using israccess::setCortexPri;
+    	using israccess::replaceCortexPri;
+    	using israccess::irq2BasepriLevel;
+
+    	static_assert(SharedResource::inSet(callingHandler), "");
+
+        if (callLevel == protectLevel)
+        {}
+        else if (callLevel == 0)
+        	setCortexPri<irq2BasepriLevel<protectLevel>()>();
         else
-        {
-            static_assert(SharedResource::inSet(callingHandler), "");
-        }
-        if (!sameLevel)
-        {
-            israccess::setCortexPri(
-                israccess::irq2BasepriLevel<protectLevel>());
-        }
+        	m_cortexPri= replaceCortexPri<irq2BasepriLevel<protectLevel>()>();
         std::atomic_signal_fence(std::memory_order_seq_cst);
     }
     ~Cover()
     {
+    	using israccess::setCortexPri;
+    	using israccess::replaceCortexPri;
+    	using israccess::irq2BasepriLevel;
+
         std::atomic_signal_fence(std::memory_order_seq_cst);
-        if (!sameLevel)
-        {
-            israccess::setCortexPri(israccess::irq2BasepriLevel<callLevel>());
-        }
+        if (callLevel == protectLevel)
+        {}
+        else if (callLevel == 0)
+        	setCortexPri<irq2BasepriLevel<callLevel>()>();
+        else
+        	setCortexPri(m_cortexPri);
     }
+  private:
+    int m_cortexPri;
 };
 
 #endif /* MCU_SRC_COVER_H_ */

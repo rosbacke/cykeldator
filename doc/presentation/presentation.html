@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<!--
+  Copyright 2010 Google Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Original slides: Marcin Wichary (mwichary@google.com)
+  Modifications: Ernest Delgado (ernestd@google.com)
+                 Alex Russell (slightlyoff@chromium.org)
+
+  landslide modifications: Adam Zapletal (adamzap@gmail.com)
+                           Nicolas Perriault (nperriault@gmail.com)
+-->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Using C++ with microcontrollers</title>
+    <!-- Styles -->
+    
+    <link rel="stylesheet" media="print" href="file:///usr/lib/python2.7/dist-packages/landslide/themes/default/css/print.css">
+    <link rel="stylesheet" media="screen, projection" href="file:///usr/lib/python2.7/dist-packages/landslide/themes/default/css/screen.css">
+    
+    
+    <!-- /Styles -->
+    <!-- Javascripts -->
+    
+    <script type="text/javascript" src="file:///usr/lib/python2.7/dist-packages/landslide/themes/default/js/slides.js"></script>
+    
+    
+    
+    <!-- /Javascripts -->
+</head>
+<body>
+  <div id="blank"></div>
+  <div class="presentation">
+    <div id="current_presenter_notes">
+      <div id="presenter_note"></div>
+    </div>
+    <div class="slides">
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-1">
+          <div class="inner">
+            
+            <header><h1>Using C++ with microcontrollers</h1></header>
+            
+            
+            <section><p>How to break legacy practices and use C++ with unit testing and dual target codebases.</p>
+<p>By: Mikael Rosbacke</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              1/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-2">
+          <div class="inner">
+            
+            <header><h1>Introduction</h1></header>
+            
+            
+            <section><p>Inspired by a presonal MCU project, what could be done to modernize common practices 
+in embedded to be more in line with modern C++ development.</p>
+<ul>
+<li>Unit tests on the host computer.</li>
+<li>Decent subset of C++ for most of the code.</li>
+<li>Use of support tools: git, cmake, clang-format, tidy etc.</li>
+<li>Dual target compile. As much of the code workable on the host. (incl. interrupt and driver code)</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              2/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-3">
+          <div class="inner">
+            
+            <header><h1>Bike computer</h1></header>
+            
+            
+            <section><p>Example project: A bike computer.</p>
+<ul>
+<li>Use photo barrier to count spokes, giving ~40 pulses/wheel lapse.</li>
+<li>Precision time measurement with hardware based time stamps.</li>
+<li>speed/distance measurement, update freq. ~5Hz with good accuracy.  </li>
+<li>Based on STM32F103 MCU (Bluepill breakout board)  </li>
+<li>I2C connected 1.3" OLed display.</li>
+<li>Uart serial device for logging data to external units.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              3/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-4">
+          <div class="inner">
+            
+            <header><h1>MCU architecture.</h1></header>
+            
+            
+            <section><ul>
+<li>MCU: STM32F103 (128kB flash, 20kB SRAM, NVIC interrupt controller)</li>
+<li>32 bit core, ARM Cortex-M3 architecture. Memory mapped devices.</li>
+<li>Project devices: Usart, I2c, Timer (counter + capture), GPIO, Systick.</li>
+<li>Interrupts with several priority levels used.</li>
+<li>No RTOS will be used. (Can be added later if needed)</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              4/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-5">
+          <div class="inner">
+            
+            <header><h1>Testing strategy</h1></header>
+            
+            
+            <section><p>Aim for 5 different types of testing:</p>
+<ul>
+<li>Exploratory testing : Hacking around on target during development.</li>
+<li>Unit testing : Putting most of the code under unit test, buildable on the host.</li>
+<li>Device driver tests : Target based application exercising most drivers.</li>
+<li>Signal processing tests : Replay of sensor data to verify algorithms.</li>
+<li>System tests : The bike computer works as expected during use.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              5/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-6">
+          <div class="inner">
+            
+            <header><h1>Dual targeting from a code base</h1></header>
+            
+            
+            <section><ul>
+<li>Foundation for unit testing all code. Vital to get as much of the code buildable on the host as possible.</li>
+<li>Needed for the signal processing tests. Should run with a thin wrapper supplying sensor data from a file.</li>
+</ul>
+<h2>Challenges</h2>
+<ul>
+<li>Embedded toolchains differs significantly from host systems. Solved by using gcc as both cross and host compiler.</li>
+<li>Interrupt code model that works on the host. </li>
+<li>MCU support library. Need to identify an interface between target specific code and common code.</li>
+<li>Convince cmake to build for both targets.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              6/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-7">
+          <div class="inner">
+            
+            <header><h1>STM32 peripherial support library</h1></header>
+            
+            
+            <section><p>An ST supplied library in C with hardware description header files and C drivers.
+It has 5 main parts:</p>
+<ul>
+<li>c-startup assember code for the MCU:s. (startup_stm32f10x_md.s)</li>
+<li>Linker file.</li>
+<li>ST supplied register definitions for all peripherial devices. (stm32f10x.h)</li>
+<li>Arm supplied Cortex-M3 header files and drivers. (core_cm3.h)</li>
+<li>ST supplied drivers. (C and H files.)</li>
+</ul>
+<p>We will use the first four. We skip the drivers since they do not offer much needed functionality and add complexity. By rewriting in C++ we gain type safety and get smaller drivers.</p>
+<p>Startup and linker are target platform only. We need to handle core_cm3.h and stm32f10x.h.</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              7/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-8">
+          <div class="inner">
+            
+            <header><h1>stm32f10x.h</h1></header>
+            
+            
+            <section><p>Main components: </p>
+<ul>
+<li>structs for each device type. Registers are struct members.</li>
+<li>Defines for bit definitions within the registers.</li>
+<li>Enum with all available interrupt sources.</li>
+<li>Defines for base pointers to device register maps.</li>
+</ul>
+<p>Good news: This file can be used on the host. It uses standard C constructs.<br />
+Bad news: The included core_cm3.h can not.<br />
+Good news: The base pointers are macro defines and can be redefined.  </p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              8/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-9">
+          <div class="inner">
+            
+            <header><h1>core_cm3.h</h1></header>
+            
+            
+            <section><p>Issues:</p>
+<ul>
+<li>Includes inline functions with inline cortex-m3 assembly instructions. Gcc can compile it, but
+  the function can never be used.</li>
+<li>It is included by stm32f10x.h so we will get this included automatically.</li>
+<li>core_cm3.h and stm32f10x.h have cross dependencies. Main issue is IRQn_type enum, but there is more.</li>
+<li>The startup code uses these headers directly and are immune to any normal wrapping attempt.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              9/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-10">
+          <div class="inner">
+            
+            <header><h1>mcuaccess.h</h1></header>
+            
+            
+            <section><p>Purpose: Wrap access to stm32f10x.h.<br />
+- On target we just include it with minimal modifications.<br />
+- On host we modify the supplied definitions so they are usable on the host.  </p>
+<pre><code>#if defined(__linux__)
+
+  #define __WFE __dummyWFE   // Turn definition into a dummy name.
+
+  #include &lt;DeviceSupport/ST/STM32F10x/stm32f10x.h&gt;
+
+  #undef __WFE               // And redefine.
+  static __INLINE void __WFE()   { /* host specific code */ }
+
+  extern USART_TypeDef g_fakeDeviceUsart1;
+
+  #undef  USART1            // Make device pointer point to normal memory. 
+  #define USART1 (&amp;g_fakeDeviceUsart1)
+
+#else
+  #include &lt;DeviceSupport/ST/STM32F10x/stm32f10x.h&gt;
+#endif
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              10/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-11">
+          <div class="inner">
+            
+            <header><h1>Example unit test</h1></header>
+            
+            
+            <section><pre><code>#include &lt;gtest/gtest.h&gt;
+#include "mcuaccess.h"
+
+TEST(Test_mcuif, can_call_inline_assembly_fkns_in_host)
+{
+    // Can call functions on host.
+    __enable_irq();
+    __disable_irq();
+    __WFE();
+    // ...
+}
+TEST(Test_mcuif, can_access_fake_memory_map_of_a_device)
+{
+    USART1-&gt;CR1 = 0x0;
+    EXPECT_EQ(g_fakeDeviceUsart1.CR1, 0x0);
+    USART1-&gt;CR1 = 0x1234;
+    EXPECT_EQ(g_fakeDeviceUsart1.CR1, 0x1234);
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              11/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-12">
+          <div class="inner">
+            
+            <header><h1>Interrupt code on the host</h1></header>
+            
+            
+            <section><ul>
+<li>C/C++ have no notion of interrupts. This is fully a system defined extension. It relies on compiler support for specific hardware. </li>
+<li>We need an interrupt programming model on the target, that can be ported to the host.
+The model should be device agnostic. Written code should be able to outlive its hardware.</li>
+<li>Model the interrupts from threads. Assume interrupts will be modeled with threads on the host system.</li>
+<li>Interrupts priorities should be possible to model on the host using e.g. posix real-time thread extensions.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              12/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-13">
+          <div class="inner">
+            
+            <header><h1>Asymmetric, run-to-completion</h1></header>
+            
+            
+            <section><ul>
+<li>Interrupts are fully asymmetric. Once started, it must run to completion before a lower level interrupt can run. It can be interrupted by higher level interrupts.</li>
+<li>A collarly, we can't use mutexes to protect shared data, we need to prevent interrupts from starting, before accessing shared data. It is done using enable/disable interrupts.</li>
+<li>Code compiled both for host and target must use a protection primitive that turn into a mutex
+on the host and disables interrupts on target.</li>
+<li>On target we still need the analog of 'acquire' and 'release' events connecting. Depending on target hardware compiler barriers might suffice.</li>
+<li>Do note on target, anything that can block a thread will risk to deadlock an interrupt. Atomics are fine if they are lock free. Watch out for compiler generated locks.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              13/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-14">
+          <div class="inner">
+            
+            <header><h1>Interrupt priorities</h1></header>
+            
+            
+            <section><ul>
+<li>Assume a model where main/threads have interrupt priority 0 and interrupts have a static level of 1 or above. Higher numerical level interrupt lower.</li>
+<li>Assume all interrupts are assigned levels at compile time.</li>
+<li>Assume all possible protected state know what interrupts will access it at compile time.</li>
+<li>Given this, we can determine max interrupt priority that will access a specific shared resource. Hence masking interrupts up to this level will protect the resource, without blocking higher interrupts.</li>
+<li>When protecting a resource all other potential accessors are blocked. Hence when restoring masking level we know we can restore it to level 0.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              14/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-15">
+          <div class="inner">
+            
+            <header><h1>Cortex-M3 interrupt control.</h1></header>
+            
+            
+            <section><p>ARM uses a different interrupt priority scheme. </p>
+<ul>
+<li>Based on an 8 bit value. But vendors can implement a subset, removing bits from LSB side. ST uses 4 bits.</li>
+<li>Higher numerical values implies lower interrupt priority. </li>
+</ul>
+<p>Hence values written to registers needs a conversion. It can be compile time calculated.</p>
+<pre><code>// Functions from core_cm3.h
+
+// Read/Write interrupt priority mask.
+inline uint32_t __get_BASEPRI(void);
+inline void __set_BASEPRI(uint32_t basePri);
+
+// Set interrupt priority level.
+static __INLINE void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority);
+
+// Enable/disable individual interrupts.
+static __INLINE void NVIC_EnableIRQ(IRQn_Type IRQn);
+static __INLINE void NVIC_DisableIRQ(IRQn_Type IRQn);
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              15/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-16">
+          <div class="inner">
+            
+            <header><h1>Project specific setup.</h1></header>
+            
+            
+            <section><pre><code>// Enum listing all used interrupts.
+enum class IrqS 
+{
+    systick, tim2, usart1, 
+    thread,                 // For use in 'cover'.
+    maxNo                   // size of the interrupt array.
+};
+
+#define CASE(x,y,z) case x: return IrqData&lt;IrqS&gt;(x,y,z)
+template &lt;&gt;
+constexpr IrqData&lt;IrqS&gt; irq2Data&lt;IrqS&gt;(IrqS irq) 
+{
+    switch(irq) {
+    // 1: Enum value for interrupt.
+    // 2: STM32 identifier for interrupt.
+    // 3: Interrupt level. 1, lowest, 15 highest.
+    CASE(IrqS::tim2,    Tim2_IRQn,           3);
+    CASE(IrqS::usart1,  Usart1_IRQn,         2);
+    CASE(IrqS::systick, SysTick_IRQn,        1);
+    CASE(IrqS::thread,  NonMaskableInt_IRQn, 0); // Dummy IRQ value.
+    }
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              16/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-17">
+          <div class="inner">
+            
+            <header><h1>SharedResource</h1></header>
+            
+            
+            <section><p>Implement the analog of a mutex. Take a compile time list of interrupts that can lock this resource.</p>
+<pre><code>template &lt;typename EnumType_, EnumType_ handler, EnumType_... handlers&gt;
+class IrqList;
+
+template &lt;typename IrqList_&gt;
+class SharedResource
+{
+  public:
+    using IrqList = IrqList_;
+    using EnumType = typename IrqList::EnumType;
+
+    // Priority level to raise the irq level to during critical sections.
+    static const constexpr int protectPri = IrqList::maxPri;
+
+    // Return true if a particular thread/irq is part of of the given 
+    // static set.
+    constexpr static bool inSet(EnumType queryVal) {
+        return IrqList::inSet(queryVal);
+    }
+};
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              17/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-18">
+          <div class="inner">
+            
+            <header><h1>Cover and example usage</h1></header>
+            
+            
+            <section><p>Use a class 'Cover' as analog of 'mutex_lock'.<br />
+Protect on construction and restore on destruction.
+Template argument ties to shared resource and indicate what is calling it.</p>
+<pre><code>// Example from systick timer. Protect a sharead systick counter.
+using ShRes =
+  SharedResource&lt;IrqList&lt;IrqS, IrqS::systick, IrqS::thread&gt;&gt;;
+uint32_t m_systick{0};
+
+// Access functions, 
+void TimeSource::systickIsr()
+{
+    Cover&lt;ShRes, IrqSource::systick&gt; c;
+    m_systick++;
+}
+uint32_t TimeSource::systick() const
+{
+    Cover&lt;ShRes, IrqSource::thread&gt; c;
+    return m_systick;
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              18/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-19">
+          <div class="inner">
+            
+            <header><h1>Example assembly.</h1></header>
+            
+            
+            <section><pre><code>08000eb0 &lt;TimeSource::systickIsr()&gt;:
+ 8000eb0:   68c3        ldr r3, [r0, #12]
+ 8000eb2:   3301        adds    r3, #1
+ 8000eb4:   60c3        str r3, [r0, #12]
+ 8000eb6:   4770        bx  lr
+
+08000ebe &lt;TimeSource::systick() const&gt;:
+ 8000ebe:   23f0        movs    r3, #240    ; 0xf0
+ 8000ec0:   f383 8811   msr BASEPRI, r3
+ 8000ec4:   68c0        ldr r0, [r0, #12]
+ 8000ec6:   2300        movs    r3, #0
+ 8000ec8:   f383 8811   msr BASEPRI, r3
+ 8000ecc:   4770        bx  lr
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              19/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-20">
+          <div class="inner">
+            
+            <header><h1>Cover implementation</h1></header>
+            
+            
+            <section><pre><code>template &lt;typename SharedResource, IrqS callIrq&gt;
+class Cover
+{
+  public:
+    static const constexpr int callLevel = irq2Data(callIrq).level;
+    static const constexpr int protectLevel = SharedResource::protectLevel;
+    Cover() 
+    {
+        static_assert(SharedResource::inSet(callIrq), "");
+        if (callLevel != protectLevel) 
+            setCortexPri(irq2BasepriLevel&lt;protectLevel&gt;());
+        std::atomic_signal_fence(std::memory_order_seq_cst);
+    }
+    ~Cover()
+    {
+        std::atomic_signal_fence(std::memory_order_seq_cst);
+        if (callLevel != protectLevel)
+            setCortexPri(irq2BasepriLevel&lt;0&gt;());
+    }
+};
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              20/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-21">
+          <div class="inner">
+            
+            <header><h1>Notes on atomics</h1></header>
+            
+            
+            <section><p>Standard atomics can be used for primitive types <em>if</em> they are lock free. It is true
+for Cortex-M3 but not for e.g. Cortex-M0. 
+But looking at the assembly from atomic accesses, it is very verbose.
+The solution above is much more compact.</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              21/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-22">
+          <div class="inner">
+            
+            <header><h1>Interrupt handler functions</h1></header>
+            
+            
+            <section><p>The entry functions for interrupts are a highly system/compiler dependent.</p>
+<pre><code>// Example: Handler function for the systick interrupt. 
+// (For Cortex-M, a normal C function)
+extern "C" void SysTick_IRQHandler(void) { /* ... */ }
+</code></pre>
+<ul>
+<li>From the C++ standard point of view, these functions are root-nodes in in calling tree. We must
+  convince the compiler that they can be called, even though no other function calls them.
+With link-time optimization the toolchain gets a whole-program view and just hiding it in a .cpp 
+is not enough anymore. </li>
+<li>After C++11, the compiler must be ready for other threads to call externally visible functions so it should suffice to show it is externally accessible.</li>
+<li>In our case, they are refered in the startup assembly file in the interrupt vector table and
+it seems to be enough for gcc/Cortex-M.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              22/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-23">
+          <div class="inner">
+            
+            <header><h1>Interrupt handler functions.</h1></header>
+            
+            
+            <section><p>Calling e.g. a member function require some kind of data pointer, making the raw handler awkward.
+We let the handler call a 'delegate' and then drivers can register their function callbacks as needed.</p>
+<pre><code>// Heavy slideware...
+delegate&lt;void()&gt; isrTable[ IrqS::maxNo ];
+
+#define MK_IRQ_FKN(handler, FknName)                      \
+    extern "C" void FknName##_IRQHandler(void)            \
+    {                                                     \
+        isrTable[ static_cast&lt;int&gt;(handler) ]();          \
+    }
+
+MK_IRQ_FKN(IrqS::systick, SysTick)
+MK_IRQ_FKN(IrqS::tim2,    TIM2)
+MK_IRQ_FKN(IrqS::usart1,  USART1)
+
+// Example registration in systick driver.
+TimeSource::TimeSource() {
+    isrTable[ int(IrqS::systick) ].set&lt;&amp;TimeSource::systickIsr&gt;(*this);
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              23/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-24">
+          <div class="inner">
+            
+            <header><h1>Assembly for systick irq call</h1></header>
+            
+            
+            <section><pre><code>08000f84 &lt;SysTick_Handler&gt;:
+
+ 8000f84: 4801        ldr r0, [pc, #4]  ; (8000f8c &lt;SysTick_Handler+0x8&gt;)
+ 8000f86: f850 3c04   ldr.w r3, [r0, #-4]
+ 8000f8a: 4718        bx  r3
+ 8000f8c: 20000004  andcs r0, r0, r4
+
+
+08000ebc &lt;void details::common&lt;void ()&gt;::doMemberCB&lt;TimeSource,
+  &amp;TimeSource::systickIsr&gt;(details::common&lt;void ()&gt;::DataPtr const&amp;)&gt;:
+
+ 8000ebc: 6800        ldr r0, [r0, #0]
+ 8000ebe: f7ff bff9   b.w 8000eb4 &lt;TimeSource::systickIsr()&gt;
+
+
+08000eb4 &lt;TimeSource::systickIsr()&gt;:
+
+ 8000eb4: 68c3        ldr r3, [r0, #12]
+ 8000eb6: 3301        adds  r3, #1
+ 8000eb8: 60c3        str r3, [r0, #12]
+ 8000eba: 4770        bx  lr
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              24/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: embedded.md -->
+      <div class="slide-wrapper">
+        <div class="slide slide-25">
+          <div class="inner">
+            
+            <header><h1>Summary so far</h1></header>
+            
+            
+            <section><ul>
+<li>It is possible to get the ST supplied header files to compile on the host.
+  The code needed is far from ideal, but get the job done and is localized to one file.</li>
+<li>You can unit test all the way down to driver level. However, at some point the tests
+  gets trivial so a testing boundary needs to be established.</li>
+<li>A model for interrupt code is presented that can be turned into thread based code on the host.
+  It also lifts us from outdated practices using volatile into a more common mutex like workflow.</li>
+<li>With interrupt priorities set at compile time, it is possible to get the shared data protection to automatically adapt to needed protection measures.</li>
+<li>Using delegates for interrupt handlers opens up much design freedom with a very modest runtime cost.</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="embedded.md">embedded.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              25/25
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+  <div id="toc" class="sidebar hidden">
+    <h2>Table of Contents</h2>
+    <table>
+      <caption>Table of Contents</caption>
+      
+      <tr id="toc-row-1">
+        <th><a href="#slide1">Using C++ with microcontrollers</a></th>
+        <td><a href="#slide1">1</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-2">
+        <th><a href="#slide2">Introduction</a></th>
+        <td><a href="#slide2">2</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-3">
+        <th><a href="#slide3">Bike computer</a></th>
+        <td><a href="#slide3">3</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-4">
+        <th><a href="#slide4">MCU architecture.</a></th>
+        <td><a href="#slide4">4</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-5">
+        <th><a href="#slide5">Testing strategy</a></th>
+        <td><a href="#slide5">5</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-6">
+        <th><a href="#slide6">Dual targeting from a code base</a></th>
+        <td><a href="#slide6">6</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-7">
+        <th><a href="#slide7">STM32 peripherial support library</a></th>
+        <td><a href="#slide7">7</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-8">
+        <th><a href="#slide8">stm32f10x.h</a></th>
+        <td><a href="#slide8">8</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-9">
+        <th><a href="#slide9">core_cm3.h</a></th>
+        <td><a href="#slide9">9</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-10">
+        <th><a href="#slide10">mcuaccess.h</a></th>
+        <td><a href="#slide10">10</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-11">
+        <th><a href="#slide11">Example unit test</a></th>
+        <td><a href="#slide11">11</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-12">
+        <th><a href="#slide12">Interrupt code on the host</a></th>
+        <td><a href="#slide12">12</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-13">
+        <th><a href="#slide13">Asymmetric, run-to-completion</a></th>
+        <td><a href="#slide13">13</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-14">
+        <th><a href="#slide14">Interrupt priorities</a></th>
+        <td><a href="#slide14">14</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-15">
+        <th><a href="#slide15">Cortex-M3 interrupt control.</a></th>
+        <td><a href="#slide15">15</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-16">
+        <th><a href="#slide16">Project specific setup.</a></th>
+        <td><a href="#slide16">16</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-17">
+        <th><a href="#slide17">SharedResource</a></th>
+        <td><a href="#slide17">17</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-18">
+        <th><a href="#slide18">Cover and example usage</a></th>
+        <td><a href="#slide18">18</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-19">
+        <th><a href="#slide19">Example assembly.</a></th>
+        <td><a href="#slide19">19</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-20">
+        <th><a href="#slide20">Cover implementation</a></th>
+        <td><a href="#slide20">20</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-21">
+        <th><a href="#slide21">Notes on atomics</a></th>
+        <td><a href="#slide21">21</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-22">
+        <th><a href="#slide22">Interrupt handler functions</a></th>
+        <td><a href="#slide22">22</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-23">
+        <th><a href="#slide23">Interrupt handler functions.</a></th>
+        <td><a href="#slide23">23</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-24">
+        <th><a href="#slide24">Assembly for systick irq call</a></th>
+        <td><a href="#slide24">24</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-25">
+        <th><a href="#slide25">Summary so far</a></th>
+        <td><a href="#slide25">25</a></td>
+      </tr>
+      
+      
+    </table>
+  </div>
+  
+  <div id="help" class="sidebar hidden">
+    <h2>Help</h2>
+    <table>
+      <caption>Help</caption>
+      <tr>
+        <th>Table of Contents</th>
+        <td>t</td>
+      </tr>
+      <tr>
+        <th>Exposé</th>
+        <td>ESC</td>
+      </tr>
+      <tr>
+        <th>Full screen slides</th>
+        <td>e</td>
+      </tr>
+      <tr>
+        <th>Presenter View</th>
+        <td>p</td>
+      </tr>
+      <tr>
+        <th>Source Files</th>
+        <td>s</td>
+      </tr>
+      <tr>
+        <th>Slide Numbers</th>
+        <td>n</td>
+      </tr>
+      <tr>
+        <th>Toggle screen blanking</th>
+        <td>b</td>
+      </tr>
+      <tr>
+        <th>Show/hide slide context</th>
+        <td>c</td>
+      </tr>
+      <tr>
+        <th>Notes</th>
+        <td>2</td>
+      </tr>
+      <tr>
+        <th>Help</th>
+        <td>h</td>
+      </tr>
+    </table>
+  </div>
+  <script>main()</script>
+</body>
+</html>

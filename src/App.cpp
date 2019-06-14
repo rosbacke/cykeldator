@@ -80,6 +80,13 @@ void App::run()
         	m_calc.addTickPoint(tp);
             lcd.write(tp.m_count);
         }
+
+
+        if (int32_t(lastTick - lastDisplayUpdate) >= 500)
+        {
+        	lastDisplayUpdate = lastTick;
+        	// lcd.update();
+        }
         if (int32_t(lastTick - lastLed) >= 500)
         {
         	setLed(true);

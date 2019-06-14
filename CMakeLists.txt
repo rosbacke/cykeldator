@@ -27,6 +27,8 @@ else()
     find_package(GTest REQUIRED)
     set(THREADS_PREFER_PTHREAD_FLAG 1)
     find_package( Threads REQUIRED )
+    
+    add_subdirectory(src/host_main)
 endif()
 
 add_subdirectory(src/interpreter)
