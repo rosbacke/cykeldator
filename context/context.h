@@ -25,6 +25,7 @@ extern "C" transfer_t jump_fcontext( fcontext_t const to, void * vp);
 /**
  * Given a pointer to a stack buffer, prepare it so that it can be 
  * switched to. Upon switch, 'fn' will be called.
+ * Requires: sp is aligned as a void* ptr. size is a multiple of that alignment.
  */
 extern "C" fcontext_t make_fcontext( void * sp, std::size_t size, void (* fn)( transfer_t) );
 
