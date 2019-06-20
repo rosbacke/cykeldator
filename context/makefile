@@ -21,7 +21,6 @@ main.elf : main.cpp context.cpp
 	$(CXX) $(CFLAGS) $(CXXFLAGS) $(LDFLAGS) -o main.elf main.cpp context.cpp ../src/target_main/startup_stm32f10x_md.s ../src/target_main/system_stm32f10x.c ../mcu_src/mcuaccess.cpp
 	arm-none-eabi-objdump -D main.elf > main.txt
 
-
 upload: main.elf
 	@echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2.cfg -c "gdb_port pipe; log_output openocd.log"' > upload.gdb
 	@echo 'monitor halt'
