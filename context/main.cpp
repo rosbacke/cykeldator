@@ -1,4 +1,5 @@
 #include "context.h"
+#include "../mcu_src/mcuaccess.h"
 
 
 static char stack1[ 500 ];
@@ -39,9 +40,47 @@ static void context_entry(transfer_t t) noexcept
     // with nullptr as return value.
     ontop_fcontext( t.fctx, &u, context_exit);
 }
+static void pass()
+{
+	GPIOB->ODR = 0xf00;
+	while(1);
+}
+
+static void fail()
+{
+	GPIOB->ODR = 0xa500;
+	while(1);
+}
+
+#define VERIFY( x ) do { if (!(x)) fail(); } while(0)
+
+static void setup()
+{
+	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
+	GPIOB->CRH = 0x11111111;
+}
+
+
+void dummyEntry( transfer_t)
+{}
+
+void can_set_up_a_stack()
+{
+	static char stack[ 500 ];
+	fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
+	VERIFY(false);
+	VERIFY(fct >= stack && fct < stack + sizeof stack);
+}
+
 
 int main()
 {
+	setup();
+
+	can_set_up_a_stack();
+	pass();
+	while(1)
+		;
   fcontext_t ctx;
 
   ctx = make_fcontext( stack1, sizeof stack1, context_entry);
