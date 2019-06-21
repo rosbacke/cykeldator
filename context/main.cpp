@@ -1,8 +1,6 @@
 #include "context.h"
 #include "../mcu_src/mcuaccess.h"
 
-static char stack1[ 500 ];
-
 extern "C" void _init(void)
 {
 }
@@ -40,38 +38,6 @@ static void context_entry(transfer_t t) noexcept
     // with nullptr as return value.
     ontop_fcontext( t.fctx, &u, context_exit);
 }
-static void pass()
-{
-	GPIOB->ODR = 0xf00;
-	while(1);
-}
-
-static void fail()
-{
-	GPIOB->ODR = 0xa500;
-	while(1);
-}
-
-#define VERIFY( x ) do { if (!(x)) fail(); } while(0)
-
-static void setup()
-{
-	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
-	GPIOB->CRH = 0x11111111;
-}
-
-
-void dummyEntry( transfer_t)
-{}
-
-void can_set_up_a_stack()
-{
-	static char stack[ 500 ];
-	fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
-	VERIFY(false);
-	VERIFY(fct >= stack && fct < stack + sizeof stack);
-}
-
 
 static fcontext_t createContext(void* stack, uint32_t stackSize, void (*fkn)(void* v))
 {
@@ -102,6 +68,67 @@ void setLed(bool on)
         GPIOC->ODR |= 1 << 13;
 }
 
+
+
+
+static void pass()
+{
+	GPIOB->ODR = 0xf00;
+	while(1);
+}
+
+static void fail()
+{
+	GPIOB->ODR = 0xa500;
+	while(1);
+}
+
+#define VERIFY( x ) do { if (!(x)) fail(); } while(0)
+
+static void setup()
+{
+	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
+	GPIOB->CRH = 0x11111111;
+	GPIOB->ODR = 0x0;
+}
+
+static int testData = 0;
+static int testData2 = 0;
+
+void dummyEntry( transfer_t t)
+{
+	VERIFY(t.data == &testData);
+	testData++;
+	jump_fcontext(t.fctx, &testData2);
+	while(1)
+		;
+	fail();
+}
+
+void can_set_up_a_stack()
+{
+	static char stack[ 500 ];
+	fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
+	VERIFY(true);
+	VERIFY(fct >= stack && fct < stack + sizeof stack);
+
+	uint32_t* t = (uint32_t*)fct;
+	VERIFY(t[5] == (uint32_t)dummyEntry);
+
+}
+
+void can_jump_to_stack()
+{
+	testData = 0;
+	static char stack[ 500 ];
+	fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
+
+	auto t = jump_fcontext(fct, &testData);
+	VERIFY(testData == 1);
+	VERIFY(t.data == &testData2);
+	//fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
+}
+
 static char stack1[ 500 ];
 
 int main()
@@ -109,6 +136,7 @@ int main()
 	setup();
 
 	can_set_up_a_stack();
+	can_jump_to_stack();
 	pass();
 	while(1)
 		;

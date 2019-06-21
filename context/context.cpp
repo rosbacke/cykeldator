@@ -7,7 +7,6 @@ using namespace context::detail;
 
 // Reference C ARM calling convention: http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 
-
 // Both 'jump' and 'ontop' return a composite type. In Cortex-M calling convention this result in
 // the caller allocating stack space and a pointer is passed in R0. Hence return values should
 // be written to the address stored in 'R0'.
@@ -16,17 +15,31 @@ using namespace context::detail;
 // -> Storing registers, switching stack and restoring registers (Including LR) means we get the correct
 // return address.
 
-
 // Invariants for valid sleeping contexts: (work in progress)
 // ctx points to lowest occupied stack entry.
-// It contains the function to call on next invocation.
+// It contains the place to return to on next jump. (LR)
+
+extern "C" transfer_t topFkn( fcontext_t const to, void * vp)
+{
+	asm("ldr	r1, [r0, #4]");
+	asm("ldr	r0, [r0, #0]");
+	asm("bx r8");
+}
 
 extern "C" fcontext_t make_fcontext( void * sp, std::size_t size, void (* fn)( transfer_t) )
 {
+	// Initial context sets up a function that get the incoming values via parameters.
+	// The normal 'jump_context' assumes they are passed via return value.
+	// We use 'topFkn' as an adapter to move the returned values into arguments and
+	// then call 'fn'.
+
 	uint32_t* stackTop = (uint32_t*)((uint32_t)sp + size);
 	uint32_t* currSP = stackTop;
+	uint32_t* r0 = currSP + 1; // Set up r1 to point into the stack where r4 is stored. r4,r5 will be used for return value.
 	currSP -= 7; // Reserve space where registers are saved.
-	currSP[1] =(uint32_t)fn; // Store fn function pointer as new LR to be restored.
+	currSP[6] =(uint32_t)topFkn; // Need a small adapter to move return value into fkn arguments.
+	currSP[5] =(uint32_t)fn; // Store fn function pointer as r8.
+	currSP[0] = (uint32_t)r0;
 	return fcontext_t{ currSP };
 }
 
@@ -38,16 +51,16 @@ extern "C" transfer_t jump_fcontext( fcontext_t const to, void * vp)
 	asm("push	{r0, r4, r5, r6, r7, r8, lr}");
 
 	// Switch stack.
-	asm("mrs r3, psp");
-	asm("msr psp, r1");
+	asm("mrs r3, msp");
+	asm("msr msp, r1");
 
 	// Write return values for the new function.
 
 	// Restore registers.
 	asm("pop	{r0, r4, r5, r6, r7, r8, lr}");
 
-	asm("str	r3, [r0], #0");
-	asm("str	r2, [r0], #4");
+	asm("str	r3, [r0, #0]");
+	asm("str	r2, [r0, #4]");
 
 	// Return by jumping to link register.
 	asm("bx lr");
@@ -62,8 +75,8 @@ extern "C" transfer_t ontop_fcontext( fcontext_t const to, void * vp, transfer_t
 	asm("push	{r0, r4, r5, r6, r7, r8, lr}");
 
 	// Switch stack.
-	asm("mrs r4, psp");
-	asm("msr psp, r1");
+	asm("mrs r4, msp"); // TODO: switch to user space stack.
+	asm("msr msp, r1"); // TODO: switch to user space stack.
 	asm("mov r4, r1");
 
 	// Restore registers.

@@ -18,7 +18,7 @@ LD:=arm-none-eabi-g++
 all: main.elf
 
 main.elf : main.cpp context.cpp 
-	$(CXX) $(CFLAGS) $(CXXFLAGS) $(LDFLAGS) -o main.elf main.cpp context.cpp ../src/target_main/startup_stm32f10x_md.s ../src/target_main/system_stm32f10x.c ../mcu_src/mcuaccess.cpp
+	$(CXX) $(CFLAGS) $(CXXFLAGS) $(LDFLAGS) -g -o main.elf main.cpp context.cpp ../src/target_main/startup_stm32f10x_md.s ../src/target_main/system_stm32f10x.c ../mcu_src/mcuaccess.cpp
 	arm-none-eabi-objdump -D main.elf > main.txt
 
 upload: main.elf
@@ -29,3 +29,9 @@ upload: main.elf
 	@echo 'monitor reset' >> upload.gdb
 	@echo 'monitor exit' >> upload.gdb
 	$(GDB) --batch -x upload.gdb main.elf
+
+debug: main.elf
+	echo 'target remote | openocd -f board/st_nucleo_f103rb.cfg -f interface/stlink-v2.cfg -c "gdb_port pipe; log_output openocd.log"' > debug.gdb
+	echo 'load' >> debug.gdb
+	echo 'monitor reset halt' >> debug.gdb
+	$(GDB) -x debug.gdb main.elf
