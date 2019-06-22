@@ -107,7 +107,7 @@ void dummyEntry( transfer_t t)
 
 void can_set_up_a_stack()
 {
-	static char stack[ 500 ];
+	static char stack[ 64 ];
 	fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
 	VERIFY(true);
 	VERIFY(fct >= stack && fct < stack + sizeof stack);
@@ -120,7 +120,7 @@ void can_set_up_a_stack()
 void can_jump_to_stack()
 {
 	testData = 0;
-	static char stack[ 500 ];
+	static char stack[ 64 ];
 	fcontext_t fct = make_fcontext( stack, sizeof stack, dummyEntry);
 
 	auto t = jump_fcontext(fct, &testData);

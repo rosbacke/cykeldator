@@ -29,11 +29,11 @@ extern "C" transfer_t topFkn( fcontext_t const to, void * vp)
 extern "C" fcontext_t make_fcontext( void * sp, std::size_t size, void (* fn)( transfer_t) )
 {
 	// Initial context sets up a function that get the incoming values via parameters.
-	// The normal 'jump_context' assumes they are passed via return value.
+	// The normal 'jump_context' assumes they are passed via the return value.
 	// We use 'topFkn' as an adapter to move the returned values into arguments and
 	// then call 'fn'.
 
-	uint32_t* stackTop = (uint32_t*)((uint32_t)sp + size);
+	uint32_t* stackTop = (uint32_t*)sp - 2;
 	uint32_t* currSP = stackTop;
 	uint32_t* r0 = currSP + 1; // Set up r1 to point into the stack where r4 is stored. r4,r5 will be used for return value.
 	currSP -= 7; // Reserve space where registers are saved.
@@ -54,11 +54,10 @@ extern "C" transfer_t jump_fcontext( fcontext_t const to, void * vp)
 	asm("mrs r3, msp");
 	asm("msr msp, r1");
 
-	// Write return values for the new function.
-
 	// Restore registers.
 	asm("pop	{r0, r4, r5, r6, r7, r8, lr}");
 
+	// Write return values for the new function.
 	asm("str	r3, [r0, #0]");
 	asm("str	r2, [r0, #4]");
 
@@ -67,7 +66,6 @@ extern "C" transfer_t jump_fcontext( fcontext_t const to, void * vp)
 	return transfer_t{0,0};
 }
 
-//extern "C" transfer_t ontop_fcontext( fcontext_t const to, void * vp, transfer_t (* fn)( transfer_t) ) __attribute__((__noreturn__));
 extern "C" transfer_t ontop_fcontext( fcontext_t const to, void * vp, transfer_t (* fn)( transfer_t) )
 {
 	// Save registers.
