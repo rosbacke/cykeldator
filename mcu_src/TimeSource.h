@@ -38,7 +38,7 @@ public:
 
 private:
   using ShRes =
-      SharedResource<IrqList<IrqSource, IrqSource::systick, IrqSource::thread>>;
+      SharedResource<IrqList<Irq_e, Irq_e::systick, Irq_e::thread>>;
 
   SysTick_Type* m_stDev = nullptr;
   void systickIsr();
@@ -51,7 +51,7 @@ void TimeSource::delay(int ms)
 {
     const uint32_t base = m_systick;
     auto done = [&]() {
-		Cover<ShRes, IrqSource::thread> c;
+		Cover<ShRes, Irq_e::thread> c;
         auto cnt = m_systick;
         return int32_t(cnt - base) >= ms;
     };

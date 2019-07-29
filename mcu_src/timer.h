@@ -31,14 +31,14 @@ class OdoTimer
     // CAll in thread or timer mode.
     bool getTP(TickPoint& tp)
     {
-        Cover<ShRes, IrqSource::thread> c;
+        Cover<ShRes, Irq_e::thread> c;
         tp = m_tp;
         bool newTp = m_newTp;
         m_newTp = false;
         return newTp;
     }
-    using ShRes = SharedResource<IrqList<IrqSource, IrqSource::systick,
-                                         IrqSource::tim2, IrqSource::thread>>;
+    using ShRes = SharedResource<IrqList<Irq_e, Irq_e::systick,
+                                         Irq_e::tim2, Irq_e::thread>>;
 
   private:
     void setupTimer(TimeSource*);

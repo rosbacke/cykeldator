@@ -10,8 +10,6 @@
 #include "isr_project.h"
 #include "mcuaccess.h"
 
-#include <stdbool.h>
-
 void
 Usart::isr()
 {
@@ -52,11 +50,10 @@ Usart::checkRead()
     }
 }
 
-
 void
 Usart::blockwrite(const char* str)
 {
-	Cover<UsartCover, IrqSource::thread> cover;
+	Cover<UsartCover, Irq_e::thread> cover;
     while (*str)
         tx.write(*str++);
     m_regs->CR1 |= USART_CR1_TXEIE;
@@ -71,7 +68,7 @@ Usart::setupUsart1(Usart& usart)
     using hwports::rcc;
     using hwports::usart1;
 
-    IsrHandlers<IrqSource>::del(IrqSource::usart1).set<Usart, &Usart::isr>(usart);
+    IsrHandlers::del(Irq_e::usart1).set<Usart, &Usart::isr>(usart);
 
     rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN | RCC_APB2ENR_IOPBEN;
 
@@ -91,8 +88,8 @@ Usart::setupUsart1(Usart& usart)
     t |= (0xa << 4) | (0x8 << 8);
     gpioa->CRH = t;
 
-    IsrManager<IrqSource::usart1>::setup();
-    IsrManager<IrqSource::usart1>::active(true);
+    IsrSource<Irq_e::usart1>::setup();
+    IsrSource<Irq_e::usart1>::active(true);
 
     usart1->CR1 |= USART_CR1_RE | USART_CR1_TE;
 }

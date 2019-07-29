@@ -15,8 +15,8 @@ uint32_t g_currentCortexIsrLevel = 0;
 void isrInit()
 {}
 
-MK_SYSIRQ_FKN(IrqSource::systick, SysTick)
+MK_SYSIRQ_FKN(Irq_e::systick, SysTick)
 
-MK_IRQ_FKN(IrqSource::tim2, TIM2)
-MK_IRQ_FKN(IrqSource::usart1, USART1)
-MK_IRQ_FKN(IrqSource::usart2, USART2)
+MK_IRQ_FKN(Irq_e::tim2, TIM2)
+MK_IRQ_FKN(Irq_e::usart1, USART1)
+MK_IRQ_FKN(Irq_e::usart2, USART2)

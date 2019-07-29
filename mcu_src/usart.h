@@ -26,7 +26,7 @@ class Usart
 
   private:
     using UsartCover =
-        SharedResource<IrqList<IrqSource, IrqSource::usart1, IrqSource::thread>>;
+        SharedResource<IrqList<Irq_e, Irq_e::usart1, Irq_e::thread>>;
 
     void isr();
     bool readByte(uint8_t* data);

@@ -10,7 +10,7 @@
 
 #include "isr.h"
 
-enum class IrqSource
+enum class Irq_e
 {
     systick,
     tim2,
@@ -20,9 +20,11 @@ enum class IrqSource
     maxNo   // size of the interrupt array.
 };
 
+#define CASE(x,y,z) case Irq_e::x: return IrqData<Irq_e>(irq, y, z)
+
 template <>
-constexpr IrqData<IrqSource> irq2Data<IrqSource>(IrqSource irq) {
-#define CASE(x,y,z) case IrqSource::x: return IrqData<IrqSource>(irq, y, z)
+constexpr IrqData<Irq_e> irq2Data<Irq_e>(Irq_e irq)
+{
 	switch(irq) {
 
 	// 1: Enum value for interrupt.
@@ -34,13 +36,19 @@ constexpr IrqData<IrqSource> irq2Data<IrqSource>(IrqSource irq) {
 	CASE(usart2,  USART2_IRQn, 2);
 	CASE(thread,  NonMaskableInt_IRQn, 0);
 	}
-#undef CASE
-	return IrqData<IrqSource>(IrqSource::maxNo, NonMaskableInt_IRQn, 0);
+	return IrqData<Irq_e>(Irq_e::maxNo, NonMaskableInt_IRQn, 0);
 }
+
+#undef CASE
 
 // Specialize on out irq enum. To be used for drivers to setup and
 // control the interrupt
-template<IrqSource irqSrc>
-using IsrManager = InterruptSource<IrqSource, irqSrc>;
+template<Irq_e irqSrc>
+using IsrSource = InterruptSource<Irq_e, irqSrc>;
+
+// Specialize on out irq enum. To be used for drivers to setup and
+// control the interrupt
+using IsrHandlers = IsrHandlerManager<Irq_e>;
+
 
 #endif /* MCU_SRC_ISR_PROJECT_H_ */

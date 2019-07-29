@@ -15,7 +15,7 @@
 
 OdoTimer::OdoTimer(TIM_TypeDef* device, TimeSource* ts) : m_dev(device)
 {
-    IsrHandlers<IrqSource>::del(IrqSource::tim2)
+    IsrHandlers::del(Irq_e::tim2)
         .set<OdoTimer, &OdoTimer::tim2Isr>(*this);
     setupTimer(ts);
 }
@@ -63,8 +63,8 @@ void OdoTimer::setupTimer(TimeSource* ts)
     m_dev->CR1 = TIM_CR1_CEN | TIM_CR1_URS;
 
     /* set Priority for Cortex-M3 System Interrupts */
-    IsrManager<IrqSource::tim2>::setup();
-    IsrManager<IrqSource::tim2>::active(true);
+    IsrSource<Irq_e::tim2>::setup();
+    IsrSource<Irq_e::tim2>::active(true);
 
     // Set up CC3/CC4 as input capture on IT3.
     m_dev->CCMR2 |= TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1;
@@ -147,7 +147,7 @@ void OdoTimer::tim2Isr()
     m_dev->SR &= ~(uint32_t)srMask;
     if (send)
     {
-        Cover<ShRes, IrqSource::tim2> c;
+        Cover<ShRes, Irq_e::tim2> c;
         m_tp = TickPoint(m_count, m_negEdgeTS, m_posEdgeTS);
         m_newTp = true;
     }

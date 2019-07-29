@@ -11,26 +11,21 @@
 TimeSource::TimeSource(SysTick_Type* stDev)
 	: m_stDev(stDev)
 {
-    IsrHandlers<IrqSource>::del(IrqSource::systick)
+    IsrHandlers::del(Irq_e::systick)
         .set<TimeSource, &TimeSource::systickIsr>(*this);
-    IsrManager<IrqSource::systick>::setup();
+    IsrSource<Irq_e::systick>::setup();
     SysTick_Config(72000);
-    //IsrManager<IrqSource::systick>::active(true);
 }
 
 void TimeSource::systickIsr()
 {
-	auto val = [&]() {
-		Cover<ShRes, IrqSource::systick> c;
-		m_systick++;
-		return m_systick;
-	}();
-    // m_systickCB(val);
+	Cover<ShRes, Irq_e::systick> c;
+	m_systick++;
 }
 
 uint32_t TimeSource::systick() const
 {
-	Cover<ShRes, IrqSource::thread> c;
+	Cover<ShRes, Irq_e::thread> c;
     return m_systick;
 }
 

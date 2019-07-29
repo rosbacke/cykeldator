@@ -15,7 +15,7 @@ static int s_delayCnt;
 
 static void callSysTick()
 {
-    IsrHandlers<IrqSource>::callIsr(IrqSource::systick);
+    IsrHandlerManager<Irq_e>::callIsr(Irq_e::systick);
 }
 
 static void

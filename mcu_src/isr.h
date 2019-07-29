@@ -61,11 +61,11 @@ class InterruptSource
 };
 
 template<typename IrqEnum>
-class IsrHandlers
+class IsrHandlerManager
 {
   public:
     using IrqFkn = delegate<void()>;
-    static IsrHandlers instance;
+    static IsrHandlerManager instance;
 
     static inline IrqFkn& del(IrqEnum h)
     {
@@ -86,7 +86,7 @@ class IsrHandlers
 };
 
 template<typename IrqEnum>
-IsrHandlers<IrqEnum> IsrHandlers<IrqEnum>::instance;
+IsrHandlerManager<IrqEnum> IsrHandlerManager<IrqEnum>::instance;
 
 
 /**
@@ -99,7 +99,7 @@ IsrHandlers<IrqEnum> IsrHandlers<IrqEnum>::instance;
     {                                                     \
         using EnumType = decltype(handler);               \
         int pos = static_cast<int>(handler);              \
-        IsrHandlers<EnumType>::instance.m_isrCB[pos]();   \
+        IsrHandlerManager<EnumType>::instance.m_isrCB[pos]();   \
     }
 
 
@@ -113,7 +113,7 @@ IsrHandlers<IrqEnum> IsrHandlers<IrqEnum>::instance;
     {                                                     \
         using EnumType = decltype(handler);               \
         int pos = static_cast<int>(handler);              \
-        IsrHandlers<EnumType>::instance.m_isrCB[pos]();   \
+        IsrHandlerManager<EnumType>::instance.m_isrCB[pos]();   \
     }
 
 #endif /* MCU_SRC_ISR_H_ */
