@@ -6,6 +6,7 @@
  */
 
 
+#include "SignalChain.h"
 
 #include <errno.h>
 #include <fmt/format.h>
@@ -13,7 +14,61 @@
 #include <chrono>
 #include <unistd.h>
 
-#include "SignalChain.h"
+#include <boost/program_options.hpp>
+#include <boost/program_options/option.hpp>
+#include <boost/program_options/options_description.hpp>
+
+namespace po = boost::program_options;
+
+void
+setupOptions(po::options_description& desc)
+{
+    desc.add_options()                                    //
+        ("help", "produce help message")                  //
+        ("usage", "Show summary of command line options") //
+        ("version", "Show git version of the program.")   //
+#if 0
+        ("serial-device,d", po::value<std::string>(),
+         "Name of serial device for byte interface.") //
+        ("serial-options", po::value<std::string>()->default_value(""),
+         "Colon sep. list of options for serial device. Ex: "
+         "<none>|<pulldown>|<rs485_te>") //
+        ("mode", po::value<std::string>(),
+         "Mode the program should work in. Allowed: std_io, raw_pty,"
+         "socat_tun, socat_tap, tun, tap, setup_tap, remove_tap.") //
+        ("address", po::value<int>()->default_value(0),
+         "Local address on the serial net. Implies static address. "
+         "If not given, implies dynamic address for client only or static "
+         "address 1 for master client. Value between 1 - 32") //
+        ("peer_address", po::value<int>()->default_value(0),
+         "Address for the opposite end in the raw format.") //
+        ("master,m",
+         "Start the master part. Exactly one master should be active for each "
+         "serial_net.") //
+        ("mtimeout", po::value<int>()->default_value(-1),
+         "Stop the master after given amount of time (sec)") //
+        ("log,l", po::value<int>()->default_value(2),
+         "Log level. (0=trace, 4=error)") //
+        ("wsdump", po::value<std::string>(),
+         "Dump all serial packets to a named pipe, suitable for test2pcap") //
+        ("endwithmaster",
+         "Quit the client if we receive a 'master_stop' message.") //
+        ("on-if-up", po::value<std::string>()->default_value(""),
+         "Give a command to run using 'system' call when the interface comes "
+         "up.") //
+        ("on-if-down", po::value<std::string>()->default_value(""),
+         "Give a command to run using 'system' call when the interface goes "
+         "down.") //
+        ("user", po::value<std::string>()->default_value(""),
+         "Owning user when setting up a tap interface.") //
+        ("group", po::value<std::string>()->default_value(""),
+         "Owning group when setting up a tap interface.") //
+        ("tap-name", po::value<std::string>()->default_value("tap0"),
+         "Name to use for the tap/tun interface.") //
+#endif
+        ;
+}
+
 
 static std::vector<std::array<uint32_t, 4>> readInput()
 {
@@ -68,6 +123,37 @@ void processSample(uint32_t index, SignalChain& sc)
 int
 main(int argc, const char* argv[])
 {
+    if (argc < 1)
+    {
+        return -1;
+    }
+    if (argc == 1)
+    {
+        std::cout << "\n";
+        std::cout << "Use: 'host_main --help' for overview of the tool.\n";
+        std::cout << std::endl;
+        return 0;
+    }
+
+    // Declare the supported options.
+    po::options_description desc("Allowed options");
+    setupOptions(desc);
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help") > 0)
+    {
+    	// std::cout << helpMessage() << "\n";
+        return 1;
+    }
+    if (vm.count("usage") > 0)
+    {
+        std::cout << desc << std::endl;
+        return 1;
+    }
+
     std::vector<std::array<uint32_t, 4>> data = readInput();
 
     SignalChain signalChain;

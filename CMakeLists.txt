@@ -28,6 +28,9 @@ else()
     set(THREADS_PREFER_PTHREAD_FLAG 1)
     find_package( Threads REQUIRED )
     
+    FIND_PACKAGE( Boost COMPONENTS program_options REQUIRED )
+    
+    
     add_subdirectory(src/host_main)
 endif()
 
